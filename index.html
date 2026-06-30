@@ -437,16 +437,13 @@ window.onload=function(){
 
 var SHEETS_URL='https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec';
 function loadCfg(){
-  try{S.cfg=JSON.parse(localStorage.getItem('empaques_cfg')||'{}');}catch(e){S.cfg={};}
-  if(!S.cfg.sheetsUrl) S.cfg.sheetsUrl=SHEETS_URL;
-  applyCfgForm();
+  try{ S.cfg=JSON.parse(localStorage.getItem('empaques_cfg')||'{}'); }catch(e){ S.cfg={}; }
+  S.cfg.sheetsUrl = SHEETS_URL; // siempre usar la URL hardcodeada
+  S.cfg.ger1 = 'soporte@molub.com.mx';
+  S.cfg.ger2 = 'gerenciaventas@molub.com.mx';
 }
 function applyCfgForm(){
-  var m={'c-sheets-url':'sheetsUrl','c-ejsSvc':'ejsService','c-ejsTpl':'ejsTemplate','c-ejsKey':'ejsPubkey','c-supUser':'supUser','c-supPass':'supPass','c-ger1':'ger1','c-ger2':'ger2','c-ger3':'ger3'};
-  for(var id in m){var el=document.getElementById(id);if(el){el.value=S.cfg[m[id]]||'';}}
-  // Always show the hardcoded URL
-  var su=document.getElementById('c-sheets-url');
-  if(su&&!su.value) su.value=SHEETS_URL;
+  // Panel de config eliminado — nada que hacer
 }
 function saveConfig(){
   S.cfg={sheetsUrl:v('c-sheets-url')||'https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec',ejsService:v('c-ejsSvc'),ejsTemplate:v('c-ejsTpl'),ejsPubkey:v('c-ejsKey'),supUser:v('c-supUser'),supPass:v('c-supPass'),ger1:v('c-ger1'),ger2:v('c-ger2'),ger3:v('c-ger3')};
@@ -518,11 +515,19 @@ function saveLocal(rep){
 }
 function loadLocal(){return JSON.parse(localStorage.getItem('empaques_reps')||'[]');}
 
+// Credenciales hardcodeadas del supervisor
+var SUP_USER = 'emmanuel';
+var SUP_PASS = '1234';
 function doLogin(){
-  var user=v('lg-user'),pass=v('lg-pass');
-  var su=S.cfg.supUser||'emmanuel', sp=S.cfg.supPass||'1234';
-  if(user===su&&pass===sp){S.supIn=true;showScreen('supervisor');loadSupReports();}
-  else toast('❌ Usuario o contraseña incorrectos','err');
+  var user=v('lg-user'), pass=v('lg-pass');
+  if(!user||!pass){ toast('Ingresa usuario y contraseña','err'); return; }
+  if(user===SUP_USER && pass===SUP_PASS){
+    S.supIn=true;
+    showScreen('supervisor');
+    loadSupReports();
+  } else {
+    toast('❌ Usuario o contraseña incorrectos','err');
+  }
 }
 function doLogout(){S.supIn=false;showScreen('tecnico');}
 
