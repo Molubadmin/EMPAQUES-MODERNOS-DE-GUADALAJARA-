@@ -517,7 +517,6 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
   <img id="lbox-img" src="" alt=""/>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
 const S={cfg:{},tecNombre:'',tecArea:'',imgs:[],reports:[],decRid:null,decAction:null,supIn:false};
 
@@ -531,7 +530,6 @@ window.onload=function(){
     applyNombre();
     document.getElementById('name-ov').classList.add('hidden');
   }
-  if(S.cfg.ejsPubkey){try{emailjs.init(S.cfg.ejsPubkey);}catch(e){}}
 };
 
 var SHEETS_URL=location.href.indexOf('script.google.com')>=0
@@ -551,11 +549,11 @@ function applyCfgForm(){
   // Panel de config eliminado — nada que hacer
 }
 function saveConfig(){
-  S.cfg={sheetsUrl:v('c-sheets-url')||'https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec',ejsService:v('c-ejsSvc'),ejsTemplate:v('c-ejsTpl'),ejsPubkey:v('c-ejsKey'),supUser:v('c-supUser'),supPass:v('c-supPass'),ger1:v('c-ger1'),ger2:v('c-ger2'),ger3:v('c-ger3')};
+  S.cfg={sheetsUrl:SHEETS_URL,ger1:'soporte@molub.com.mx',ger2:'gerenciaventas@molub.com.mx'};
   localStorage.setItem('empaques_cfg',JSON.stringify(S.cfg));
-  if(S.cfg.ejsPubkey){try{emailjs.init(S.cfg.ejsPubkey);}catch(e){}}
   toast('✅ Configuración guardada');
-  document.getElementById('cfg-status').textContent='✅ Guardado correctamente';
+  var cfgStatus=document.getElementById('cfg-status');
+  if(cfgStatus) cfgStatus.textContent='✅ Guardado correctamente';
 }
 
 function confirmarNombre(){
@@ -604,9 +602,7 @@ function enviarReporte(){
   var btn=document.getElementById('btn-enviar');
   btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span>Enviando...';
   btn.disabled=true;
-  // Para Sheets enviamos el reporte SIN las imágenes (muy pesadas) — solo el conteo
-  var repSheets=Object.assign({},rep,{imagenes: rep.imagenes&&rep.imagenes.length ? rep.imagenes.length+' foto(s)' : 'Sin fotos'});
-  fetch(sheetUrl,{method:'POST',body:JSON.stringify(repSheets),mode:'no-cors'})
+  fetch(sheetUrl,{method:'POST',body:JSON.stringify(rep),mode:'no-cors'})
     .then(function(){ toast('✅ Reporte enviado y guardado en Google Sheets','ok'); })
     .catch(function(){ toast('✅ Guardado localmente — sin conexión a Sheets','acc'); })
     .finally(function(){ btn.innerHTML='📤 Enviar Reporte'; btn.disabled=false; });
@@ -836,40 +832,12 @@ function confirmDec(){
     body:JSON.stringify({action:'updateStatus',folio:folio,status:action,supervisor:'Emmanuel',comentario:comment}),
     mode:'no-cors'
   }).catch(function(e){console.warn('Sheets update:',e);});
-  // 4. Enviar correo a gerentes
-  if(si>-1) notifyGerentes(S.reports[si]);
   closeModal('mod-dec'); closeModal('mod-rep');
   var msg=action==='autorizado'
-    ? '✅ Autorizado — correo enviado a soporte y gerencia'
-    : '❌ Rechazado — correo enviado a soporte y gerencia';
+    ? '✅ Autorizado — Google enviará correo a soporte y gerencia'
+    : '❌ Rechazado — Google enviará correo a soporte y gerencia';
   toast(msg, action==='autorizado'?'ok':'err');
   renderDash(); renderPend(); renderTodos();
-}
-
-function notifyGerentes(rep){
-  var c=S.cfg;
-  if(!c.ejsService||!c.ejsTemplate){ console.warn('EmailJS no configurado'); return; }
-  // Correos fijos de gerencia — siempre reciben la notificación
-  var recips=['soporte@molub.com.mx','gerenciaventas@molub.com.mx'];
-  // Agregar correos extra configurados (si existen)
-  [c.ger1,c.ger2,c.ger3].forEach(function(e){ if(e&&recips.indexOf(e)<0) recips.push(e); });
-  var sl=rep.status==='autorizado'?'✅ AUTORIZADO':'❌ RECHAZADO';
-  recips.forEach(function(email){
-    try{
-      emailjs.send(c.ejsService,c.ejsTemplate,{
-        to_email:email,
-        from_name:'Emmanuel — Empaques Modernos de Guadalajara',
-        report_folio:rep.folio,
-        report_title:rep.titulo,
-        report_status:sl,
-        report_area:rep.area,
-        report_tecnico:rep.autorNombre,
-        report_turno:rep.turno||'',
-        report_fecha:rep.fecha||'',
-        supervisor_comment:rep.supervisorComentario||'Sin comentarios adicionales.'
-      });
-    }catch(e){ console.warn('EmailJS error:',e); }
-  });
 }
 
 function exportExcel(){
