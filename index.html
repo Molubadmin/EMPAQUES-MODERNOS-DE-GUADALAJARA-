@@ -170,6 +170,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800)}
 /* TOAST */
 .toast{position:fixed;bottom:1.3rem;right:1.3rem;background:var(--pri);color:#fff;padding:.75rem 1.1rem;border-radius:var(--r);box-shadow:0 6px 20px rgba(13,37,87,.22);font-size:.84rem;font-weight:600;z-index:9999;max-width:300px;animation:ti .22s ease}
 @keyframes ti{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .toast.ok{background:var(--ok)}.toast.err{background:var(--err)}.toast.acc{background:var(--acc)}
 
 .lbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:flex;align-items:center;justify-content:center}
@@ -341,7 +342,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800)}
     <button class="tab-btn active" id="stab-dash" onclick="supTab('dash')">📊 Dashboard</button>
     <button class="tab-btn" id="stab-pend" onclick="supTab('pend')">⏳ Pendientes <span id="pend-badge" style="background:var(--err);color:#fff;border-radius:1rem;padding:.03rem .4rem;font-size:.67rem;margin-left:.22rem;display:none"></span></button>
     <button class="tab-btn" id="stab-todos" onclick="supTab('todos')">🗂️ Todos los Reportes</button>
-    <button class="tab-btn" id="stab-cfg" onclick="supTab('cfg')">⚙️ Configuración</button>
+
   </div>
 
   <div class="sup-content">
@@ -384,96 +385,12 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800)}
       <div id="sp-todos-list"></div>
     </div>
 
-    <div id="spanel-cfg" class="tab-panel">
-      <div class="card">
-        <div class="card-title">⚙️ Configuración del Sistema</div>
-
-        <div class="cfg-box">
-          <h3>📊 Google Sheets — Base de Datos</h3>
-          <p>Todos los reportes se guardan automáticamente en una hoja de Google que puedes abrir en Excel.<br/><br/>
-          <strong>Pasos:</strong><br/>
-          1. Abre <strong>Google Sheets</strong> y crea una hoja nueva<br/>
-          2. Ve a <strong>Extensiones → Apps Script</strong><br/>
-          3. Pega el script de abajo, guarda, y despliega como <strong>Web App</strong> (acceso: Cualquier persona)<br/>
-          4. Copia la URL del despliegue y pégala aquí</p>
-        </div>
-
-        <div class="cfg-box green">
-          <h3>📋 Script para Google Apps Script</h3>
-          <pre id="gas-code" style="font-size:.71rem;font-family:monospace;white-space:pre-wrap;line-height:1.5;background:#DCFCE7;padding:.7rem;border-radius:.4rem;margin-bottom:.6rem">function doPost(e) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getActiveSheet();
-  var data = JSON.parse(e.postData.contents);
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['Folio','Fecha Envío','Técnico','Área','Turno',
-      'Fecha Reporte','Prioridad','Título','Actividades Cumplidas',
-      'Actividades No Cumplidas','Observaciones','Comentarios',
-      'Estado','Supervisor','Comentario Supervisor','Fecha Revisión']);
-    sheet.getRange(1,1,1,16).setFontWeight('bold')
-      .setBackground('#0D2557').setFontColor('#FFFFFF');
-  }
-  sheet.appendRow([
-    data.folio, data.fechaEnvio, data.tecnico, data.area, data.turno,
-    data.fecha, data.prioridad, data.titulo, data.cumplidas,
-    data.noCumplidas||'', data.observaciones||'', data.comentarios||'',
-    'Pendiente','','',''
-  ]);
-  return ContentService
-    .createTextOutput(JSON.stringify({ok:true,folio:data.folio}))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doGet(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var rows = sheet.getDataRange().getValues();
-  return ContentService
-    .createTextOutput(JSON.stringify(rows))
-    .setMimeType(ContentService.MimeType.JSON);
-}</pre>
-          <button class="btn btn-ghost btn-sm" onclick="copyGAS()">📋 Copiar Script</button>
-        </div>
-
-        <div class="fg" style="margin-bottom:1rem">
-          <label>URL del Web App (Apps Script)</label>
-          <input type="text" id="c-sheets-url" placeholder="https://script.google.com/macros/s/.../exec"/>
-        </div>
-
-        <div class="cfg-box warn">
-          <h3>📧 EmailJS — Notificaciones a Gerentes</h3>
-          <p>Cuando Emmanuel autoriza o rechaza, se manda correo automático a los gerentes.<br/>
-          Crea cuenta en <strong>emailjs.com</strong> → Service → Template.<br/>
-          Variables: <code>to_email</code> <code>from_name</code> <code>report_folio</code> <code>report_title</code> <code>report_status</code> <code>report_area</code> <code>report_tecnico</code> <code>supervisor_comment</code></p>
-        </div>
-        <div class="frow">
-          <div class="fg"><label>Service ID</label><input type="text" id="c-ejsSvc" placeholder="service_xxx"/></div>
-          <div class="fg"><label>Template ID</label><input type="text" id="c-ejsTpl" placeholder="template_xxx"/></div>
-        </div>
-        <div class="frow full"><div class="fg"><label>Public Key</label><input type="text" id="c-ejsKey" placeholder="user_xxx..."/></div></div>
-
-        <div class="fsec">🔐 Credenciales del Supervisor</div>
-        <div class="frow">
-          <div class="fg"><label>Usuario</label><input type="text" id="c-supUser" placeholder="emmanuel"/></div>
-          <div class="fg"><label>Contraseña</label><input type="password" id="c-supPass" placeholder="contraseña"/></div>
-        </div>
-
-        <div class="fsec">📨 Correos de Gerentes (reciben notificación al autorizar/rechazar)</div>
-        <div class="frow">
-          <div class="fg"><label>Gerente 1</label><input type="email" id="c-ger1" placeholder="gerente1@empresa.com"/></div>
-          <div class="fg"><label>Gerente 2</label><input type="email" id="c-ger2" placeholder="gerente2@empresa.com"/></div>
-        </div>
-        <div class="frow full"><div class="fg"><label>Gerente 3 (opcional)</label><input type="email" id="c-ger3" placeholder="gerente3@empresa.com"/></div></div>
-
-        <div style="margin-top:1rem;display:flex;gap:.65rem;flex-wrap:wrap">
-          <button class="btn btn-pri" onclick="saveConfig()">💾 Guardar Configuración</button>
-        </div>
-        <p id="cfg-status" style="font-size:.78rem;margin-top:.55rem;color:var(--g600)"></p>
-      </div>
-    </div>
+    
 
   </div>
 </div>
 
-<!-- MODAL DETALLE -->
+<!-- MODAL<!-- MODAL DETALLE -->
 <div class="modal-ov hidden" id="mod-rep">
   <div class="modal">
     <div class="mh"><h3 id="mod-rep-title">Reporte</h3><button class="btn-x" onclick="closeModal('mod-rep')">✕</button></div>
@@ -567,12 +484,15 @@ function enviarReporte(){
   var titulo=v('nr-titulo'),area=v('nr-area'),turno=v('nr-turno'),fecha=v('nr-fecha'),cumplidas=v('nr-cumplidas');
   if(!titulo||!area||!turno||!cumplidas){toast('Completa: área, turno, título y actividades cumplidas','err');return;}
   var folio='RPT-'+Date.now().toString().slice(-6);
+  // Extraer base64 de las imágenes para guardar con el reporte
+  var imagenesBase64=S.imgs.map(function(img){ return {name:img.name, dataUrl:img.dataUrl}; });
   var rep={
     folio:folio, fechaEnvio:new Date().toLocaleString('es-MX'),
     tecnico:S.tecNombre, area:area, turno:turno, fecha:fecha,
     prioridad:v('nr-prioridad')||'Normal', titulo:titulo,
     cumplidas:cumplidas, noCumplidas:v('nr-nocumplidas'),
     observaciones:v('nr-obs'), comentarios:v('nr-comentarios'),
+    imagenes:imagenesBase64,
     autorNombre:S.tecNombre, status:'pendiente',
     createdAt:new Date().toISOString(),
     historial:[{accion:'enviado',por:S.tecNombre,fecha:new Date().toISOString(),comentario:''}]
@@ -580,10 +500,13 @@ function enviarReporte(){
   saveLocal(rep);
   var sheetUrl=S.cfg.sheetsUrl||SHEETS_URL;
   var btn=document.getElementById('btn-enviar');
-  btn.textContent='Enviando...'; btn.disabled=true;
-  fetch(sheetUrl,{method:'POST',body:JSON.stringify(rep),mode:'no-cors'})
+  btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span>Enviando...';
+  btn.disabled=true;
+  // Para Sheets enviamos el reporte SIN las imágenes (muy pesadas) — solo el conteo
+  var repSheets=Object.assign({},rep,{imagenes: rep.imagenes&&rep.imagenes.length ? rep.imagenes.length+' foto(s)' : 'Sin fotos'});
+  fetch(sheetUrl,{method:'POST',body:JSON.stringify(repSheets),mode:'no-cors'})
     .then(function(){ toast('✅ Reporte enviado y guardado en Google Sheets','ok'); })
-    .catch(function(){ toast('✅ Guardado — verifica conexión a internet','acc'); })
+    .catch(function(){ toast('✅ Guardado localmente — sin conexión a Sheets','acc'); })
     .finally(function(){ btn.innerHTML='📤 Enviar Reporte'; btn.disabled=false; });
   limpiarForm();
 }
@@ -713,6 +636,18 @@ function openDetalle(folio){
   for(var i=0;i<S.reports.length;i++){if(S.reports[i].folio===folio){r=S.reports[i];break;}}
   if(!r)return;
   document.getElementById('mod-rep-title').textContent=r.folio+' — '+r.titulo;
+  // Mostrar imágenes base64 guardadas con el reporte
+  var imgsHtml='';
+  if(r.imagenes&&r.imagenes.length){
+    var hasObjects=typeof r.imagenes[0]==='object';
+    imgsHtml='<div class="det-block"><div class="det-btitle">📷 Evidencia Fotográfica ('+r.imagenes.length+' foto'+(r.imagenes.length>1?'s':'')+')</div>'+
+      '<div class="det-imgs">'+
+      r.imagenes.map(function(img){
+        var src=hasObjects?(img.dataUrl||img):(typeof img==='string'?img:'');
+        return src?'<img class="det-img" src="'+src+'" onclick="openLbox(''+src+'')" loading="lazy"/>':'';
+      }).join('')+
+      '</div></div>';
+  }
   var hist='';
   if(r.historial&&r.historial.length){
     hist='<div class="det-block"><div class="det-btitle">📋 Historial</div><div class="tl">';
@@ -736,7 +671,7 @@ function openDetalle(folio){
   (r.noCumplidas?blk('❌ No Cumplidas',r.noCumplidas):'')+
   (r.observaciones?blk('⚠️ Observaciones',r.observaciones):'')+
   (r.comentarios?blk('💬 Comentarios',r.comentarios):'')+
-  hist;
+  imgsHtml+hist;
   document.getElementById('mod-rep-body').innerHTML=body;
   var canDec=S.supIn&&r.status==='pendiente';
   document.getElementById('mod-rep-footer').innerHTML=
@@ -849,14 +784,26 @@ function copyGAS(){
   else{toast('Selecciona el texto del script manualmente','err');}
 }
 
+// S.imgs ahora guarda objetos {name, base64, dataUrl}
 function handleImgs(e){
-  var files=Array.from(e.target.files);
-  S.imgs=S.imgs.concat(files.slice(0,3-S.imgs.length));
-  renderPrev(); e.target.value='';
+  var files=Array.from(e.target.files).slice(0, 3-S.imgs.length);
+  var pending=files.length;
+  if(!pending){ e.target.value=''; return; }
+  files.forEach(function(file){
+    if(file.size > 5*1024*1024){ toast('Imagen demasiado grande (máx 5MB)','err'); pending--; return; }
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      S.imgs.push({ name:file.name, dataUrl:ev.target.result });
+      pending--;
+      if(pending===0) renderPrev();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value='';
 }
 function renderPrev(){
-  document.getElementById('nr-img-prev').innerHTML=S.imgs.map(function(f,i){
-    return '<div class="img-prev"><img src="'+URL.createObjectURL(f)+'"/><button class="img-prev-del" onclick="removeImg('+i+')">✕</button></div>';
+  document.getElementById('nr-img-prev').innerHTML=S.imgs.map(function(img,i){
+    return '<div class="img-prev"><img src="'+img.dataUrl+'"/><button class="img-prev-del" onclick="removeImg('+i+')">✕</button></div>';
   }).join('');
 }
 function removeImg(i){S.imgs.splice(i,1);renderPrev();}
@@ -869,7 +816,7 @@ function openModal(id){document.getElementById(id).classList.remove('hidden');}
 function closeModal(id){document.getElementById(id).classList.add('hidden');}
 function openLbox(url){document.getElementById('lbox-img').src=url;document.getElementById('lbox').classList.remove('hidden');}
 function supTab(id){
-  ['dash','pend','todos','cfg'].forEach(function(t){
+  ['dash','pend','todos'].forEach(function(t){
     document.getElementById('stab-'+t).classList.toggle('active',t===id);
     document.getElementById('spanel-'+t).classList.toggle('active',t===id);
   });
