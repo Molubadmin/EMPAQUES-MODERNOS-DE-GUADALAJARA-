@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Empaques Modernos — Reportes</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Reportes EMG"/>
+<meta name="theme-color" content="#0D2557"/>
+<style>
+:root{
+  --pri:#0D2557;--pri2:#16347a;--acc:#00AEEF;--acc2:#0093cc;
+  --wh:#fff;--g50:#F8FAFC;--g100:#F1F5F9;--g200:#E2E8F0;
+  --g400:#94A3B8;--g600:#475569;--g800:#1E293B;
+  --ok:#16A34A;--ok-bg:#F0FDF4;--err:#DC2626;--err-bg:#FEF2F2;
+  --pend:#1D4ED8;--pend-bg:#EFF6FF;
+  --r:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,sans-serif}
+body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight-color:transparent}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+/* TOPBAR */
+.topbar{background:var(--pri);padding:.85rem 1.4rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.2);flex-shrink:0}
+.topbar img{height:34px;object-fit:contain;filter:brightness(0) invert(1)}
+.tbr{display:flex;align-items:center;gap:.6rem}
+.chip{display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.14);border-radius:2rem;padding:.26rem .8rem .26rem .42rem;font-size:.78rem;color:#fff}
+.chip-av{width:26px;height:26px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;color:#fff}
+.chip-role{font-size:.66rem;background:var(--acc);border-radius:1rem;padding:.07rem .42rem;margin-left:.12rem}
+
+/* CONTENT */
+.content{flex:1;padding:1.5rem;max-width:820px;width:100%;margin:0 auto}
+.sup-content{flex:1;padding:1.5rem;max-width:1020px;width:100%;margin:0 auto}
+
+/* CARD */
+.card{background:var(--wh);border-radius:var(--rl);padding:1.4rem;box-shadow:0 1px 4px rgba(0,0,0,.09);border:1px solid var(--g200);margin-bottom:1rem}
+.card-title{font-size:.96rem;font-weight:700;color:var(--pri);padding-bottom:.75rem;border-bottom:2px solid var(--acc);margin-bottom:1.1rem;display:flex;align-items:center;gap:.4rem}
+
+/* BANNER */
+.banner{background:var(--pri);border-radius:var(--rl);padding:1.2rem 1.4rem;color:#fff;margin-bottom:1rem;display:flex;align-items:center;gap:.9rem}
+.banner-ico{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.banner h2{font-size:.97rem;font-weight:700;margin-bottom:.15rem}
+.banner p{font-size:.78rem;color:rgba(255,255,255,.78)}
+
+/* FORM */
+.fsec{font-size:.71rem;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.07em;margin:1.1rem 0 .6rem;padding-bottom:.28rem;border-bottom:1px solid var(--g200)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:.85rem}
+.frow.full{grid-template-columns:1fr}
+.fg label{display:block;font-size:.71rem;font-weight:700;color:var(--g600);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.05em}
+.fg input,.fg select,.fg textarea{width:100%;padding:.58rem .8rem;border:1.5px solid var(--g200);border-radius:var(--r);font-size:.91rem;color:var(--g800);background:var(--wh);transition:border-color .2s;-webkit-appearance:none;appearance:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--acc)}
+.fg textarea{min-height:90px;resize:vertical}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;padding:.62rem 1.25rem;border-radius:var(--r);font-size:.88rem;font-weight:600;border:none;cursor:pointer;transition:.15s}
+.btn-pri{background:var(--pri);color:#fff}.btn-pri:hover{background:var(--pri2)}
+.btn-ghost{background:transparent;color:var(--g600);border:1.5px solid var(--g200)}.btn-ghost:hover{background:var(--g100)}
+.btn-ok{background:var(--ok);color:#fff}
+.btn-err{background:var(--err);color:#fff}
+.btn-sm{padding:.36rem .8rem;font-size:.79rem}
+.btn-block{width:100%;display:flex}
+
+/* IMAGES */
+.img-zone{border:2px dashed var(--g200);border-radius:var(--r);padding:1.1rem;text-align:center;cursor:pointer;background:var(--g50);transition:.2s}
+.img-zone:hover{border-color:var(--acc);background:#EFF6FF}
+.img-zone p{font-size:.79rem;color:var(--g600);margin-top:.25rem}
+.img-previews{display:flex;gap:.55rem;flex-wrap:wrap;margin-top:.6rem}
+.img-prev{position:relative;width:84px;height:84px;border-radius:.5rem;overflow:hidden;border:2px solid var(--g200)}
+.img-prev img{width:100%;height:100%;object-fit:cover}
+.img-prev-del{position:absolute;top:2px;right:2px;background:rgba(220,38,38,.9);color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* NAME OVERLAY */
+.name-ov{position:fixed;inset:0;background:rgba(13,37,87,.72);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem}
+.name-ov.hidden{display:none}
+.name-card{background:var(--wh);border-radius:var(--rl);padding:2rem;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(13,37,87,.28);text-align:center}
+.name-card img{height:48px;object-fit:contain;margin-bottom:1.25rem}
+.name-card h2{font-size:1.05rem;font-weight:700;color:var(--pri);margin-bottom:.3rem}
+.name-card p{font-size:.81rem;color:var(--g600);margin-bottom:1.2rem}
+
+/* LOGIN */
+#sc-login{align-items:center;justify-content:center;background:var(--pri)}
+.login-card{background:var(--wh);border-radius:var(--rl);padding:2.25rem;width:100%;max-width:380px;box-shadow:0 8px 32px rgba(13,37,87,.28)}
+.login-card img{height:50px;object-fit:contain;display:block;margin:0 auto 1.5rem}
+.login-card h2{font-size:.86rem;font-weight:700;color:var(--g600);text-align:center;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1.2rem}
+
+/* TABS */
+.tab-bar{background:var(--wh);border-bottom:1px solid var(--g200);display:flex;padding:0 1.4rem;overflow-x:auto;flex-shrink:0}
+.tab-btn{padding:.76rem 1.05rem;font-size:.83rem;font-weight:600;color:var(--g600);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s}
+.tab-btn.active{color:var(--pri);border-bottom-color:var(--acc)}
+.tab-btn:hover:not(.active){color:var(--pri);background:var(--g50)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.85rem;margin-bottom:1.2rem}
+.stat{background:var(--wh);border-radius:var(--r);padding:.9rem 1.05rem;border:1px solid var(--g200);display:flex;align-items:center;gap:.8rem}
+.stat-ico{width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0}
+.stat-lbl{font-size:.69rem;color:var(--g600);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.stat-num{font-size:1.55rem;font-weight:700;color:var(--pri);line-height:1.1}
+
+/* FILTERS */
+.filters{display:flex;gap:.5rem;margin-bottom:.85rem;flex-wrap:wrap}
+.fsel{padding:.38rem .65rem;border:1.5px solid var(--g200);border-radius:.5rem;font-size:.79rem;color:var(--g800);background:var(--wh);cursor:pointer}
+.fsel:focus{outline:none;border-color:var(--acc)}
+.fsearch{flex:1;min-width:140px;padding:.38rem .7rem;border:1.5px solid var(--g200);border-radius:.5rem;font-size:.81rem;color:var(--g800)}
+.fsearch:focus{outline:none;border-color:var(--acc)}
+
+/* REP LIST */
+.rep-item{background:var(--wh);border-radius:var(--r);padding:.88rem 1.05rem;border:1px solid var(--g200);cursor:pointer;transition:.15s;display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:.6rem}
+.rep-item:hover{border-color:var(--acc);box-shadow:0 2px 8px rgba(0,174,239,.1)}
+.rep-item.pend{border-left:4px solid var(--acc)}
+.rep-item.ok{border-left:4px solid var(--ok)}
+.rep-item.err{border-left:4px solid var(--err)}
+.rep-folio{font-size:.67rem;font-weight:700;color:var(--acc);text-transform:uppercase;margin-bottom:.14rem}
+.rep-title{font-size:.9rem;font-weight:600;color:var(--g800);margin-bottom:.2rem}
+.rep-meta{font-size:.72rem;color:var(--g600);display:flex;flex-wrap:wrap;gap:.4rem}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:.18rem;padding:.19rem .55rem;border-radius:2rem;font-size:.68rem;font-weight:700;white-space:nowrap}
+.b-pend{background:var(--pend-bg);color:var(--pend)}
+.b-ok{background:var(--ok-bg);color:var(--ok)}
+.b-err{background:var(--err-bg);color:var(--err)}
+.b-norm{background:#F1F5F9;color:#475569}
+.b-alta{background:#FEF3C7;color:#92400E}
+.b-crit{background:#FEE2E2;color:#991B1B}
+.bdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(13,37,87,.55);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto}
+.modal-ov.hidden{display:none}
+.modal{background:var(--wh);border-radius:var(--rl);width:100%;max-width:740px;box-shadow:0 8px 32px rgba(13,37,87,.22);animation:su .2s ease}
+.modal-sm{max-width:450px}
+@keyframes su{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mh{background:var(--pri);color:#fff;padding:1.05rem 1.35rem;border-radius:var(--rl) var(--rl) 0 0;display:flex;align-items:center;justify-content:space-between}
+.mh.ok{background:#15803D}.mh.err{background:#B91C1C}
+.mh h3{font-size:.92rem;font-weight:700}
+.mb{padding:1.35rem}
+.mf{padding:.85rem 1.35rem;border-top:1px solid var(--g200);display:flex;gap:.55rem;justify-content:flex-end;flex-wrap:wrap}
+.btn-x{background:rgba(255,255,255,.18);border:none;color:#fff;width:26px;height:26px;border-radius:.35rem;cursor:pointer;font-size:.88rem;display:flex;align-items:center;justify-content:center}
+.btn-x:hover{background:rgba(255,255,255,.3)}
+
+/* DETAIL */
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:1rem}
+.det-row{background:var(--g50);border-radius:.45rem;padding:.48rem .7rem}
+.det-row.full{grid-column:1/-1}
+.det-lbl{font-size:.66rem;font-weight:700;color:var(--g600);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.1rem}
+.det-val{font-size:.86rem;color:var(--g800);font-weight:500}
+.det-block{margin-bottom:.95rem}
+.det-imgs{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.5rem}
+.det-img{width:100px;height:100px;object-fit:cover;border-radius:.5rem;border:1.5px solid var(--g200);cursor:pointer;transition:.15s}
+.det-img:hover{border-color:var(--acc);transform:scale(1.04)}
+.det-btitle{font-size:.69rem;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;padding-bottom:.26rem;border-bottom:1px solid var(--g200)}
+.det-block p{font-size:.86rem;color:var(--g800);line-height:1.65;white-space:pre-wrap}
+
+/* TIMELINE */
+.tl{display:flex;flex-direction:column}
+.tl-item{display:flex;gap:.6rem;padding-bottom:.8rem;position:relative}
+.tl-item:not(:last-child)::before{content:"";position:absolute;left:12px;top:26px;width:2px;height:calc(100% - 6px);background:var(--g200)}
+.tl-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;flex-shrink:0}
+.tl-dot.s{background:var(--pend-bg);color:var(--pend)}
+.tl-dot.a{background:var(--ok-bg);color:var(--ok)}
+.tl-dot.r{background:var(--err-bg);color:var(--err)}
+.tl-info strong{font-size:.8rem;font-weight:600;color:var(--g800)}
+.tl-info span{display:block;font-size:.73rem;color:var(--g600);margin-top:.05rem}
+
+/* CFG */
+.cfg-box{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:var(--r);padding:1rem;margin-bottom:1rem}
+.cfg-box h3{font-size:.8rem;font-weight:700;color:var(--pri);margin-bottom:.5rem}
+.cfg-box p{font-size:.78rem;color:#1e40af;line-height:1.6}
+.cfg-box code{background:#DBEAFE;border-radius:.25rem;padding:.07rem .3rem;font-size:.76rem;font-family:monospace;color:#1e3a8a}
+.cfg-box.green{background:#F0FDF4;border-color:#BBF7D0}
+.cfg-box.green h3{color:#14532D}.cfg-box.green p{color:#14532D}
+.cfg-box.warn{background:#FFF7ED;border-color:#FED7AA}
+.cfg-box.warn p{color:#78350F}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.3rem;right:1.3rem;background:var(--pri);color:#fff;padding:.75rem 1.1rem;border-radius:var(--r);box-shadow:0 6px 20px rgba(13,37,87,.22);font-size:.84rem;font-weight:600;z-index:9999;max-width:300px;animation:ti .22s ease}
+@keyframes ti{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast.ok{background:var(--ok)}.toast.err{background:var(--err)}.toast.acc{background:var(--acc)}
+
+.lbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:flex;align-items:center;justify-content:center}
+.lbox.hidden{display:none}
+.lbox img{max-width:90vw;max-height:90vh;border-radius:.45rem}
+.lbox-x{position:absolute;top:1rem;right:1.3rem;background:rgba(255,255,255,.15);color:#fff;border:none;font-size:1.2rem;cursor:pointer;border-radius:.35rem;padding:.2rem .55rem}
+
+@media(max-width:600px){
+  /* Layout */
+  .frow{grid-template-columns:1fr}
+  .det-grid{grid-template-columns:1fr}
+  .content,.sup-content{padding:.75rem}
+  .stats-grid{grid-template-columns:1fr 1fr}
+
+  /* Topbar móvil */
+  .topbar{padding:.7rem 1rem}
+  .topbar img{height:28px}
+  .tbr{gap:.4rem}
+  .chip{padding:.22rem .6rem .22rem .35rem;font-size:.72rem}
+  .chip-av{width:22px;height:22px;font-size:.6rem}
+  .chip-role{display:none}
+  .btn-sm{padding:.3rem .6rem;font-size:.72rem}
+
+  /* Tab bar móvil */
+  .tab-bar{padding:0 .5rem}
+  .tab-btn{padding:.65rem .7rem;font-size:.75rem}
+
+  /* Cards */
+  .card{padding:1rem}
+  .card-title{font-size:.88rem}
+
+  /* Banner bienvenida */
+  .banner{padding:1rem;gap:.7rem}
+  .banner-ico{width:38px;height:38px;font-size:1.1rem;flex-shrink:0}
+  .banner h2{font-size:.88rem}
+  .banner p{font-size:.73rem}
+
+  /* Formulario */
+  .fg input,.fg select,.fg textarea{font-size:16px !important;padding:.65rem .75rem}
+  .fg label{font-size:.68rem}
+  .fg textarea{min-height:80px}
+
+  /* Botones formulario */
+  .btn{padding:.7rem 1rem;font-size:.85rem}
+  #btn-enviar{width:100%;margin-top:.5rem}
+
+  /* Imágenes upload */
+  .img-zone{padding:.9rem}
+  .img-prev{width:72px;height:72px}
+
+  /* Name overlay */
+  .name-card{padding:1.5rem}
+  .name-card img{height:40px}
+  .name-card h2{font-size:.95rem}
+  .name-card p{font-size:.76rem}
+
+  /* Login */
+  .login-card{padding:1.75rem}
+  .login-card img{height:44px}
+
+  /* Reporte items */
+  .rep-item{padding:.75rem .85rem;flex-wrap:wrap;gap:.5rem}
+  .rep-title{font-size:.84rem}
+  .rep-meta{font-size:.68rem}
+  .rep-folio{font-size:.63rem}
+
+  /* Stats */
+  .stat{padding:.75rem .85rem;gap:.65rem}
+  .stat-ico{width:34px;height:34px;font-size:1rem}
+  .stat-num{font-size:1.35rem}
+  .stat-lbl{font-size:.63rem}
+
+  /* Modal */
+  .modal-ov{padding:.5rem .4rem;align-items:flex-end}
+  .modal{border-radius:var(--rl) var(--rl) 0 0;max-height:92vh;overflow-y:auto}
+  .modal-sm{max-width:100%}
+  .mh{padding:.9rem 1.1rem;border-radius:var(--rl) var(--rl) 0 0}
+  .mh h3{font-size:.85rem}
+  .mb{padding:1rem}
+  .mf{padding:.75rem 1rem;gap:.5rem}
+  .mf .btn{flex:1;font-size:.82rem;padding:.65rem .5rem}
+
+  /* Detalle */
+  .det-img{width:85px;height:85px}
+  .det-block p{font-size:.82rem}
+
+  /* Filters */
+  .filters{gap:.4rem}
+  .fsearch{min-width:100%;order:-1}
+  .fsel{font-size:.76rem;padding:.35rem .55rem}
+
+  /* Toast */
+  .toast{bottom:.75rem;right:.75rem;left:.75rem;max-width:none;font-size:.8rem}
+
+  /* Lbox */
+  .lbox-x{top:.5rem;right:.75rem}
+}
+
+@media(max-width:380px){
+  .tab-btn{padding:.6rem .5rem;font-size:.7rem}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .topbar img{height:24px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ TÉCNICO ═══ -->
+<div id="sc-tecnico" class="screen active">
+
+  <div class="name-ov" id="name-ov">
+    <div class="name-card">
+      <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NjAgMTAwIj4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwRDI1NTciIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggMTYgTDk4IDM0IEw5OCA3MCBMNTggODggTDE4IDcwIFoiLz4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggNTIgTDk4IDM0Ii8+CiAgICA8bGluZSB4MT0iNTgiIHkxPSI1MiIgeDI9IjU4IiB5Mj0iODgiLz4KICA8L2c+CiAgPHRleHQgeD0iMTE4IiB5PSI1MiIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzBEMjU1NyI+RW1wYXF1ZXMgTW9kZXJub3M8L3RleHQ+CiAgPHRleHQgeD0iMTE4IiB5PSI3OCIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzAwQUVFRiIgbGV0dGVyLXNwYWNpbmc9IjEuNSI+R1VBREFMQUpBUkEgwrcgU01VUkZJVCBXRVNUUk9DSzwvdGV4dD4KPC9zdmc+Cg==" alt="Empaques Modernos"/>
+      <h2>Sistema de Reportes</h2>
+      <p>Ingresa tu nombre y área para comenzar</p>
+      <div class="fg" style="text-align:left;margin-bottom:.8rem">
+        <label>Nombre completo</label>
+        <input type="text" id="inp-nombre" placeholder="Ej. Carlos Martínez" maxlength="60"/>
+      </div>
+      <div class="fg" style="text-align:left;margin-bottom:1.1rem">
+        <label>Área / Departamento</label>
+        <select id="inp-area">
+          <option value="">Seleccionar...</option>
+          <option>Producción</option><option>Mantenimiento</option><option>Calidad</option>
+          <option>Almacén</option><option>Logística</option><option>Administración</option>
+          <option>Seguridad</option><option>Otro</option>
+        </select>
+      </div>
+      <button class="btn btn-pri btn-block" onclick="confirmarNombre()">Entrar →</button>
+    </div>
+  </div>
+
+  <div class="topbar">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NjAgMTAwIj4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwRDI1NTciIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggMTYgTDk4IDM0IEw5OCA3MCBMNTggODggTDE4IDcwIFoiLz4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggNTIgTDk4IDM0Ii8+CiAgICA8bGluZSB4MT0iNTgiIHkxPSI1MiIgeDI9IjU4IiB5Mj0iODgiLz4KICA8L2c+CiAgPHRleHQgeD0iMTE4IiB5PSI1MiIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzBEMjU1NyI+RW1wYXF1ZXMgTW9kZXJub3M8L3RleHQ+CiAgPHRleHQgeD0iMTE4IiB5PSI3OCIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzAwQUVFRiIgbGV0dGVyLXNwYWNpbmc9IjEuNSI+R1VBREFMQUpBUkEgwrcgU01VUkZJVCBXRVNUUk9DSzwvdGV4dD4KPC9zdmc+Cg==" alt="Empaques Modernos"/>
+    <div class="tbr">
+      <div class="chip">
+        <div class="chip-av" id="tec-av">T</div>
+        <span id="tec-name-lbl">Técnico</span>
+        <span class="chip-role">Técnico</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.28);font-size:.75rem" onclick="cambiarNombre()">Cambiar nombre</button>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.28);font-size:.75rem" onclick="showScreen('login')">🔐 Supervisor</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="banner">
+      <div class="banner-ico">👷</div>
+      <div>
+        <h2 id="tec-welcome-h">Bienvenido</h2>
+        <p>Completa el formulario con las actividades de tu turno. Tu reporte será revisado por el supervisor antes de enviarse a gerencia.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 Nuevo Reporte de Actividades</div>
+
+      <div class="fsec">📌 Información General</div>
+      <div class="frow">
+        <div class="fg"><label>Área</label>
+          <select id="nr-area">
+            <option value="">Seleccionar...</option>
+            <option>Producción</option><option>Mantenimiento</option><option>Calidad</option>
+            <option>Almacén</option><option>Logística</option><option>Administración</option>
+            <option>Seguridad</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="fg"><label>Turno</label>
+          <select id="nr-turno">
+            <option value="">Seleccionar...</option>
+            <option>Matutino (6:00–14:00)</option>
+            <option>Vespertino (14:00–22:00)</option>
+            <option>Nocturno (22:00–6:00)</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label>Fecha del Reporte</label><input type="date" id="nr-fecha"/></div>
+        <div class="fg"><label>Prioridad</label>
+          <select id="nr-prioridad">
+            <option value="Normal">Normal</option>
+            <option value="Alta">Alta</option>
+            <option value="Crítica">Crítica</option>
+          </select>
+        </div>
+      </div>
+      <div class="frow full">
+        <div class="fg"><label>Título del Reporte</label>
+          <input type="text" id="nr-titulo" placeholder="Ej. Revisión línea de producción #3"/>
+        </div>
+      </div>
+
+      <div class="fsec">⚙️ Equipo Atendido</div>
+      <div class="frow">
+        <div class="fg"><label>Equipo / Máquina / Línea</label>
+          <input type="text" id="nr-equipo" placeholder="Ej. Impresora 2, Línea 3, Montacargas 1"/>
+        </div>
+        <div class="fg"><label>¿Se cumplió la tarea del equipo?</label>
+          <select id="nr-tarea-cumplida">
+            <option value="">Seleccionar...</option>
+            <option value="Si">Sí</option>
+            <option value="Parcial">Parcial</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fsec">✅ Actividades Cumplidas</div>
+      <div class="fg"><label>Actividades que SÍ se realizaron durante el turno</label>
+        <textarea id="nr-cumplidas" placeholder="Detalla cada actividad completada..."></textarea>
+      </div>
+
+      <div class="fsec">❌ Actividades No Cumplidas</div>
+      <div class="fg"><label>Actividad del equipo que NO se cumplió</label>
+        <textarea id="nr-nocumplidas" placeholder="Indica qué actividad no se realizó..."></textarea>
+      </div>
+      <div class="fg" style="margin-top:.85rem"><label>Motivo / causa de no cumplimiento</label>
+        <textarea id="nr-motivo-nocumplida" placeholder="Explica por qué no se cumplió la actividad..."></textarea>
+      </div>
+
+      <div class="fsec">🔧 Anomalías del Equipo</div>
+      <div class="fg"><label>Describe las anomalías que presenta el equipo</label>
+        <textarea id="nr-anomalias" placeholder="Ej. Ruido anormal, fuga, vibración, paro intermitente, sensor dañado..."></textarea>
+      </div>
+
+      <div class="fsec">⚠️ Observaciones y Riesgos</div>
+      <div class="fg">
+        <textarea id="nr-obs" placeholder="Anomalías, condiciones inseguras, equipos fuera de servicio..."></textarea>
+      </div>
+
+      <div class="fsec">💬 Comentarios Adicionales</div>
+      <div class="fg">
+        <textarea id="nr-comentarios" placeholder="Información extra relevante para el supervisor..."></textarea>
+      </div>
+
+      <div class="fsec">📷 Evidencia Fotográfica (máx. 3 imágenes)</div>
+      <div class="img-zone" onclick="document.getElementById('nr-img-inp').click()">
+        <div style="font-size:1.7rem">📷</div>
+        <p>Toca o haz clic para agregar fotos</p>
+        <p style="font-size:.7rem;color:#94A3B8;margin-top:.18rem">JPG, PNG — máx. 10 MB c/u (se comprimen automáticamente)</p>
+      </div>
+      <input type="file" id="nr-img-inp" accept="image/*" multiple style="display:none" onchange="handleImgs(event)"/>
+      <div class="img-previews" id="nr-img-prev"></div>
+
+      <div style="margin-top:1.3rem;display:flex;gap:.65rem;justify-content:flex-end;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="limpiarForm()">Limpiar</button>
+        <button class="btn btn-pri" id="btn-enviar" onclick="enviarReporte()">📤 Enviar Reporte</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="sc-login" class="screen">
+  <div class="login-card">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NjAgMTAwIj4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwRDI1NTciIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggMTYgTDk4IDM0IEw5OCA3MCBMNTggODggTDE4IDcwIFoiLz4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggNTIgTDk4IDM0Ii8+CiAgICA8bGluZSB4MT0iNTgiIHkxPSI1MiIgeDI9IjU4IiB5Mj0iODgiLz4KICA8L2c+CiAgPHRleHQgeD0iMTE4IiB5PSI1MiIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzBEMjU1NyI+RW1wYXF1ZXMgTW9kZXJub3M8L3RleHQ+CiAgPHRleHQgeD0iMTE4IiB5PSI3OCIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzAwQUVFRiIgbGV0dGVyLXNwYWNpbmc9IjEuNSI+R1VBREFMQUpBUkEgwrcgU01VUkZJVCBXRVNUUk9DSzwvdGV4dD4KPC9zdmc+Cg==" alt="Empaques Modernos"/>
+    <h2>Acceso Supervisor</h2>
+    <div class="fg" style="margin-bottom:.85rem">
+      <label>Usuario</label>
+      <input type="text" id="lg-user" placeholder="emmanuel" autocomplete="username"/>
+    </div>
+    <div class="fg" style="margin-bottom:1.1rem">
+      <label>Contraseña</label>
+      <input type="password" id="lg-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    </div>
+    <button class="btn btn-pri btn-block" onclick="doLogin()">Entrar al Panel</button>
+    <button class="btn btn-ghost btn-block" style="margin-top:.55rem" onclick="showScreen('tecnico')">← Volver a Reportes</button>
+    <p style="font-size:.71rem;color:#94A3B8;text-align:center;margin-top:.9rem">Empaques Modernos de Guadalajara</p>
+  </div>
+</div>
+
+<!-- ═══ SUPERVISOR ═══ -->
+<div id="sc-supervisor" class="screen">
+  <div class="topbar">
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NjAgMTAwIj4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwRDI1NTciIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggMTYgTDk4IDM0IEw5OCA3MCBMNTggODggTDE4IDcwIFoiLz4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggNTIgTDk4IDM0Ii8+CiAgICA8bGluZSB4MT0iNTgiIHkxPSI1MiIgeDI9IjU4IiB5Mj0iODgiLz4KICA8L2c+CiAgPHRleHQgeD0iMTE4IiB5PSI1MiIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzBEMjU1NyI+RW1wYXF1ZXMgTW9kZXJub3M8L3RleHQ+CiAgPHRleHQgeD0iMTE4IiB5PSI3OCIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzAwQUVFRiIgbGV0dGVyLXNwYWNpbmc9IjEuNSI+R1VBREFMQUpBUkEgwrcgU01VUkZJVCBXRVNUUk9DSzwvdGV4dD4KPC9zdmc+Cg==" alt="Empaques Modernos"/>
+    <div class="tbr">
+      <div class="chip">
+        <div class="chip-av" style="background:#F59E0B">E</div>
+        <span>Emmanuel</span>
+        <span class="chip-role" style="background:#F59E0B">Supervisor</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.28)" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="stab-dash" onclick="supTab('dash')">📊 Dashboard</button>
+    <button class="tab-btn" id="stab-pend" onclick="supTab('pend')">⏳ Pendientes <span id="pend-badge" style="background:var(--err);color:#fff;border-radius:1rem;padding:.03rem .4rem;font-size:.67rem;margin-left:.22rem;display:none"></span></button>
+    <button class="tab-btn" id="stab-todos" onclick="supTab('todos')">🗂️ Todos los Reportes</button>
+
+  </div>
+
+  <div class="sup-content">
+
+    <div id="spanel-dash" class="tab-panel active">
+      <div class="stats-grid" id="sp-stats"></div>
+      <div style="font-size:.93rem;font-weight:700;color:var(--pri);margin-bottom:.7rem">📌 Reportes Recientes</div>
+      <div id="sp-recent"></div>
+    </div>
+
+    <div id="spanel-pend" class="tab-panel">
+      <div style="font-size:.93rem;font-weight:700;color:var(--pri);margin-bottom:.7rem">⏳ Pendientes de Revisión</div>
+      <div id="sp-pend-list"></div>
+    </div>
+
+    <div id="spanel-todos" class="tab-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.45rem">
+        <span style="font-size:.93rem;font-weight:700;color:var(--pri)">🗂️ Todos los Reportes</span>
+        <button class="btn btn-ghost btn-sm" onclick="exportExcel()">⬇️ Descargar Excel</button>
+      </div>
+      <div class="filters">
+        <input class="fsearch" placeholder="🔍 Buscar técnico, área, folio..." id="f-search" oninput="renderTodos()"/>
+        <select class="fsel" id="f-status" onchange="renderTodos()">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="autorizado">Autorizado</option>
+          <option value="rechazado">Rechazado</option>
+        </select>
+        <select class="fsel" id="f-area" onchange="renderTodos()">
+          <option value="">Todas las áreas</option>
+          <option>Producción</option><option>Mantenimiento</option><option>Calidad</option>
+          <option>Almacén</option><option>Logística</option><option>Administración</option>
+          <option>Seguridad</option><option>Otro</option>
+        </select>
+        <select class="fsel" id="f-prio" onchange="renderTodos()">
+          <option value="">Cualquier prioridad</option>
+          <option>Normal</option><option>Alta</option><option>Crítica</option>
+        </select>
+      </div>
+      <div id="sp-todos-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL DETALLE -->
+<div class="modal-ov hidden" id="mod-rep">
+  <div class="modal">
+    <div class="mh"><h3 id="mod-rep-title">Reporte</h3><button class="btn-x" onclick="closeModal('mod-rep')">✕</button></div>
+    <div class="mb" id="mod-rep-body"></div>
+    <div class="mf" id="mod-rep-footer"></div>
+  </div>
+</div>
+
+<!-- MODAL DECISIÓN -->
+<div class="modal-ov hidden" id="mod-dec">
+  <div class="modal modal-sm">
+    <div class="mh" id="mod-dec-h"><h3 id="mod-dec-title">Decisión</h3><button class="btn-x" onclick="closeModal('mod-dec')">✕</button></div>
+    <div class="mb">
+      <p style="font-size:.83rem;color:var(--g600);margin-bottom:.85rem" id="mod-dec-desc"></p>
+      <div class="fg"><label>Comentario para el técnico y los gerentes</label>
+        <textarea id="dec-comment" placeholder="Agrega observaciones..." style="min-height:92px"></textarea>
+      </div>
+    </div>
+    <div class="mf" id="mod-dec-footer"></div>
+  </div>
+</div>
+
+<div class="lbox hidden" id="lbox" onclick="this.classList.add('hidden')">
+  <button class="lbox-x">✕</button>
+  <img id="lbox-img" src="" alt=""/>
+</div>
+<script>
+/* ======================================================================
+   Empaques Modernos de Guadalajara — Reportes
+   Script corregido:
+   - Se eliminó EmailJS (los correos ahora los manda solo Apps Script/MailApp)
+   - Se corrigió un error de sintaxis en openDetalle() que rompía TODO el
+     script (por eso ningún botón "Entrar" funcionaba)
+   - Ahora sí se envían las fotos (base64) al backend para que se
+     guarden en Google Drive
+   - Las peticiones ya no usan mode:'no-cors', así que se puede leer
+     la respuesta real del servidor (éxito/error, folio, fotos, correo)
+   - Las fotos se redimensionan/comprimen en el navegador antes de
+     enviarse (más rápido y confiable)
+   ====================================================================== */
+
+var S = {
+  cfg: {},
+  tecNombre: '',
+  tecArea: '',
+  imgs: [],
+  reports: [],
+  decRid: null,
+  decAction: null,
+  supIn: false
+};
+
+var lastImgUrls = [];
+
+// ⚠️ Si vuelves a desplegar el Apps Script como una NUEVA implementación,
+// la URL cambia y debes actualizarla aquí. Si solo editas una
+// implementación existente (Implementar > Administrar implementaciones >
+// lápiz > Nueva versión > Implementar), la URL se mantiene igual.
+var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec';
+
+var SUP_USER = 'emmanuel';
+var SUP_PASS = '1234';
+
+window.onload = function () {
+  loadCfg();
+  document.getElementById('nr-fecha').value = today();
+  var n = localStorage.getItem('tec_nombre');
+  var a = localStorage.getItem('tec_area');
+  if (n && n.trim()) {
+    S.tecNombre = n;
+    S.tecArea = a || '';
+    applyNombre();
+    document.getElementById('name-ov').classList.add('hidden');
+  }
+};
+
+function loadCfg() {
+  S.cfg = { sheetsUrl: SHEETS_URL };
+}
+
+/* ---------------------------------------------------------------------
+   PANTALLA TÉCNICO — nombre / área
+--------------------------------------------------------------------- */
+function confirmarNombre() {
+  var n = document.getElementById('inp-nombre').value.trim();
+  var a = document.getElementById('inp-area').value;
+  if (!n) { toast('Escribe tu nombre completo', 'err'); return; }
+  if (!a) { toast('Selecciona tu área', 'err'); return; }
+  S.tecNombre = n;
+  S.tecArea = a;
+  localStorage.setItem('tec_nombre', n);
+  localStorage.setItem('tec_area', a);
+  document.getElementById('name-ov').classList.add('hidden');
+  applyNombre();
+}
+function applyNombre() {
+  document.getElementById('tec-name-lbl').textContent = S.tecNombre;
+  document.getElementById('tec-av').textContent = S.tecNombre.charAt(0).toUpperCase();
+  document.getElementById('tec-welcome-h').textContent = 'Bienvenido, ' + S.tecNombre.split(' ')[0];
+  document.getElementById('nr-area').value = S.tecArea;
+}
+function cambiarNombre() {
+  document.getElementById('inp-nombre').value = S.tecNombre;
+  document.getElementById('inp-area').value = S.tecArea;
+  document.getElementById('name-ov').classList.remove('hidden');
+}
+
+/* ---------------------------------------------------------------------
+   ENVÍO DE REPORTE (incluye fotos reales)
+--------------------------------------------------------------------- */
+function enviarReporte() {
+  if (!S.tecNombre) { document.getElementById('name-ov').classList.remove('hidden'); return; }
+
+  var titulo = v('nr-titulo'), area = v('nr-area'), turno = v('nr-turno'),
+      fecha = v('nr-fecha'), cumplidas = v('nr-cumplidas');
+  var equipo = v('nr-equipo'), tareaCumplida = v('nr-tarea-cumplida');
+
+  if (!titulo || !area || !turno || !equipo || !tareaCumplida || !cumplidas) {
+    toast('Completa: área, turno, equipo, tarea cumplida, título y actividades cumplidas', 'err');
+    return;
+  }
+
+  var folio = 'RPT-' + Date.now().toString().slice(-6);
+  var imagenesBase64 = S.imgs.map(function (img) { return { name: img.name, dataUrl: img.dataUrl }; });
+
+  var rep = {
+    folio: folio,
+    fechaEnvio: new Date().toLocaleString('es-MX'),
+    tecnico: S.tecNombre, area: area, turno: turno, fecha: fecha,
+    prioridad: v('nr-prioridad') || 'Normal', titulo: titulo,
+    equipo: equipo, tareaCumplida: tareaCumplida,
+    cumplidas: cumplidas, noCumplidas: v('nr-nocumplidas'),
+    motivoNoCumplida: v('nr-motivo-nocumplida'),
+    anomaliasEquipo: v('nr-anomalias'),
+    observaciones: v('nr-obs'), comentarios: v('nr-comentarios'),
+    imagenes: imagenesBase64,
+    autorNombre: S.tecNombre, status: 'pendiente',
+    createdAt: new Date().toISOString(),
+    historial: [{ accion: 'enviado', por: S.tecNombre, fecha: new Date().toISOString(), comentario: '' }]
+  };
+
+  // Guardamos localmente de inmediato — nunca se pierde el reporte,
+  // pase lo que pase con la conexión.
+  saveLocal(rep);
+
+  var btn = document.getElementById('btn-enviar');
+  var originalHtml = btn.innerHTML;
+  btn.innerHTML = '<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span>Enviando...';
+  btn.disabled = true;
+
+  var sheetUrl = S.cfg.sheetsUrl || SHEETS_URL;
+
+  // IMPORTANTE: enviamos el reporte COMPLETO (con las fotos en base64)
+  // para que el Apps Script pueda subirlas a Drive. Antes se mandaba
+  // solo un texto tipo "2 foto(s)" y por eso nunca se guardaban.
+  fetch(sheetUrl, { method: 'POST', body: JSON.stringify(rep) })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (res && res.ok) {
+        var fotos = res.fotos || 0;
+        var msg = '✅ Reporte enviado y guardado en Google Sheets';
+        if (fotos > 0) msg += ' — ' + fotos + ' foto(s) subida(s) a Drive';
+        toast(msg, 'ok');
+      } else {
+        toast('⚠️ El servidor respondió con un error. El reporte quedó guardado localmente; vuelve a intentar enviarlo más tarde.', 'err');
+        console.warn('Respuesta del servidor:', res);
+      }
+    })
+    .catch(function (err) {
+      toast('⚠️ Sin conexión con Google Sheets. El reporte quedó guardado localmente.', 'err');
+      console.warn('Error de red al enviar reporte:', err);
+    })
+    .finally(function () {
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+      limpiarForm();
+    });
+}
+
+function saveLocal(rep) {
+  var reps = JSON.parse(localStorage.getItem('empaques_reps') || '[]');
+  reps.unshift(rep);
+  localStorage.setItem('empaques_reps', JSON.stringify(reps));
+}
+function loadLocal() { return JSON.parse(localStorage.getItem('empaques_reps') || '[]'); }
+
+/* ---------------------------------------------------------------------
+   LOGIN SUPERVISOR
+--------------------------------------------------------------------- */
+function doLogin() {
+  var user = v('lg-user'), pass = v('lg-pass');
+  if (!user || !pass) { toast('Ingresa usuario y contraseña', 'err'); return; }
+  if (user === SUP_USER && pass === SUP_PASS) {
+    S.supIn = true;
+    showScreen('supervisor');
+    loadSupReports();
+  } else {
+    toast('❌ Usuario o contraseña incorrectos', 'err');
+  }
+}
+function doLogout() { S.supIn = false; showScreen('tecnico'); }
+
+/* ---------------------------------------------------------------------
+   CARGA DE REPORTES (local + Google Sheets)
+--------------------------------------------------------------------- */
+function loadSupReports() {
+  S.reports = loadLocal();
+  renderDash(); renderPend(); renderTodos();
+
+  var sheetUrl = S.cfg.sheetsUrl || SHEETS_URL;
+  fetch(sheetUrl)
+    .then(function (r) { return r.json(); })
+    .then(function (rows) {
+      if (!Array.isArray(rows) || rows.length < 2) return;
+      var headers = rows[0];
+
+      function idx(name) { return headers.indexOf(name); }
+      var folioIdx = idx('Folio');
+      var fechaEnvioIdx = idx('Fecha de Envio') >= 0 ? idx('Fecha de Envio') : idx('Fecha de Envío');
+      var tecnicoIdx = idx('Tecnico') >= 0 ? idx('Tecnico') : idx('Técnico');
+      var areaIdx = idx('Area') >= 0 ? idx('Area') : idx('Área');
+      var turnoIdx = idx('Turno');
+      var fechaIdx = idx('Fecha del Reporte');
+      var prioIdx = idx('Prioridad');
+      var tituloIdx = idx('Titulo') >= 0 ? idx('Titulo') : idx('Título');
+      var equipoIdx = idx('Equipo Atendido');
+      var tareaIdx = idx('Tarea Cumplida');
+      var cumpIdx = idx('Actividades Cumplidas');
+      var nocumpIdx = idx('Actividades No Cumplidas');
+      var motivoIdx = idx('Motivo No Cumplida');
+      var anomIdx = idx('Anomalias del Equipo') >= 0 ? idx('Anomalias del Equipo') : idx('Anomalías del Equipo');
+      var obsIdx = idx('Observaciones');
+      var comIdx = idx('Comentarios Adicionales');
+      var statusIdx = idx('Estado');
+      var supIdx = idx('Supervisor');
+      var supComIdx = idx('Comentario del Supervisor');
+      var linksIdx = idx('Links Fotografias') >= 0 ? idx('Links Fotografias') : idx('Links Fotografías');
+
+      var localMap = {};
+      S.reports.forEach(function (r) { localMap[r.folio] = r; });
+
+      var sheetReps = rows.slice(1).filter(function (r) { return r[folioIdx]; }).map(function (r) {
+        var local = localMap[r[folioIdx]] || {};
+        var linksRaw = linksIdx >= 0 ? (r[linksIdx] || '') : '';
+        var fotoLinks = String(linksRaw).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+        return {
+          folio: r[folioIdx] || '',
+          titulo: tituloIdx >= 0 ? (r[tituloIdx] || '') : '',
+          autorNombre: tecnicoIdx >= 0 ? (r[tecnicoIdx] || '') : '',
+          area: areaIdx >= 0 ? (r[areaIdx] || '') : '',
+          turno: turnoIdx >= 0 ? (r[turnoIdx] || '') : '',
+          fecha: fechaIdx >= 0 ? (r[fechaIdx] || '') : '',
+          prioridad: prioIdx >= 0 ? (r[prioIdx] || 'Normal') : 'Normal',
+          equipo: equipoIdx >= 0 ? (r[equipoIdx] || '') : '',
+          tareaCumplida: tareaIdx >= 0 ? (r[tareaIdx] || '') : '',
+          cumplidas: cumpIdx >= 0 ? (r[cumpIdx] || '') : '',
+          noCumplidas: nocumpIdx >= 0 ? (r[nocumpIdx] || '') : '',
+          motivoNoCumplida: motivoIdx >= 0 ? (r[motivoIdx] || '') : '',
+          anomaliasEquipo: anomIdx >= 0 ? (r[anomIdx] || '') : '',
+          observaciones: obsIdx >= 0 ? (r[obsIdx] || '') : '',
+          comentarios: comIdx >= 0 ? (r[comIdx] || '') : '',
+          status: (statusIdx >= 0 ? (r[statusIdx] || 'pendiente') : 'pendiente').toString().toLowerCase(),
+          supervisorNombre: supIdx >= 0 ? (r[supIdx] || '') : '',
+          supervisorComentario: supComIdx >= 0 ? (r[supComIdx] || '') : '',
+          fechaEnvio: fechaEnvioIdx >= 0 ? (r[fechaEnvioIdx] || '') : '',
+          fotoLinks: fotoLinks,
+          createdAt: local.createdAt || (fechaEnvioIdx >= 0 ? r[fechaEnvioIdx] : '') || '',
+          historial: local.historial || []
+        };
+      });
+
+      S.reports = sheetReps;
+      renderDash(); renderPend(); renderTodos();
+    })
+    .catch(function (e) { console.log('Sheets no disponible, usando datos locales', e); });
+}
+
+/* ---------------------------------------------------------------------
+   RENDER — DASHBOARD / PENDIENTES / TODOS
+--------------------------------------------------------------------- */
+function renderDash() {
+  var r = S.reports;
+  var tot = r.length, pend = r.filter(function (x) { return x.status === 'pendiente'; }).length;
+  var auth = r.filter(function (x) { return x.status === 'autorizado'; }).length;
+  var rej = r.filter(function (x) { return x.status === 'rechazado'; }).length;
+  document.getElementById('sp-stats').innerHTML =
+    sCard('📋', '#EFF6FF', '#1D4ED8', 'Total Reportes', tot) +
+    sCard('⏳', '#FEF9C3', '#92400E', 'Pendientes', pend) +
+    sCard('✅', '#F0FDF4', '#16A34A', 'Autorizados', auth) +
+    sCard('❌', '#FEF2F2', '#DC2626', 'Rechazados', rej);
+  var pb = document.getElementById('pend-badge');
+  pb.textContent = pend; pb.style.display = pend ? 'inline' : 'none';
+  document.getElementById('sp-recent').innerHTML = r.slice(0, 6).map(repItem).join('');
+}
+function sCard(ico, bg, c, l, n) {
+  return '<div class="stat"><div class="stat-ico" style="background:' + bg + ';color:' + c + '">' + ico + '</div><div><div class="stat-lbl">' + l + '</div><div class="stat-num">' + n + '</div></div></div>';
+}
+
+function renderPend() {
+  var list = S.reports.filter(function (x) { return x.status === 'pendiente'; });
+  var el = document.getElementById('sp-pend-list');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:2.5rem;color:var(--g400)"><div style="font-size:2.2rem">✅</div><p style="margin-top:.5rem;font-size:.86rem;color:var(--g600);font-weight:600">Sin pendientes — todo al día</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(repItem).join('');
+}
+
+function renderTodos() {
+  var search = (v('f-search') || '').toLowerCase();
+  var status = v('f-status'), area = v('f-area'), prio = v('f-prio');
+  var list = S.reports.slice();
+  if (status) list = list.filter(function (r) { return r.status === status; });
+  if (area) list = list.filter(function (r) { return r.area === area; });
+  if (prio) list = list.filter(function (r) { return r.prioridad === prio; });
+  if (search) list = list.filter(function (r) { return (r.titulo + r.area + r.folio + r.autorNombre).toLowerCase().indexOf(search) >= 0; });
+  var el = document.getElementById('sp-todos-list');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--g400);font-size:.84rem">Sin reportes con esos filtros</div>';
+    return;
+  }
+  el.innerHTML = list.map(repItem).join('');
+}
+
+function repItem(r) {
+  var d = r.fecha || r.createdAt || '—';
+  var hl = r.status === 'pendiente' ? 'pend' : (r.status === 'autorizado' ? 'ok' : 'err');
+  return '<div class="rep-item ' + hl + '" onclick="openDetalle(\'' + r.folio + '\')">' +
+    '<div style="flex:1;min-width:0">' +
+      '<div class="rep-folio">' + r.folio + '</div>' +
+      '<div class="rep-title">' + esc(r.titulo) + '</div>' +
+      '<div class="rep-meta"><span>👷 ' + esc(r.autorNombre) + '</span><span>📁 ' + esc(r.area) + '</span><span>⚙️ ' + esc(r.equipo || 'Sin equipo') + '</span><span>🕐 ' + esc(r.turno) + '</span><span>📅 ' + esc(d) + '</span></div>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.28rem;flex-shrink:0">' + sBadge(r.status) + pBadge(r.prioridad) + '</div>' +
+  '</div>';
+}
+
+/* ---------------------------------------------------------------------
+   DETALLE DE REPORTE (fotos, historial, autorizar/rechazar)
+--------------------------------------------------------------------- */
+function driveImageUrl(u) {
+  if (!u) return '';
+  u = String(u).trim();
+  if (u.indexOf('data:') === 0) return u; // ya es base64, se usa tal cual
+  var m = u.match(/[-\w]{25,}/); // extrae el ID de archivo de Drive de cualquier formato de URL
+  if (m) return 'https://drive.google.com/thumbnail?id=' + m[0] + '&sz=w1000';
+  return u;
+}
+function openLboxByIndex(i) {
+  var u = lastImgUrls[i];
+  if (u) openLbox(u);
+}
+
+function openDetalle(folio) {
+  var r = null;
+  for (var i = 0; i < S.reports.length; i++) { if (S.reports[i].folio === folio) { r = S.reports[i]; break; } }
+  if (!r) return;
+  document.getElementById('mod-rep-title').textContent = r.folio + ' — ' + r.titulo;
+
+  // Fuente de fotos: si el reporte tiene imágenes locales (base64, de esta
+  // sesión) se usan directo; si viene de Sheets, se usan los links de Drive.
+  var photoUrls = [];
+  if (r.imagenes && r.imagenes.length) {
+    photoUrls = r.imagenes.map(function (img) { return (img && img.dataUrl) ? img.dataUrl : (typeof img === 'string' ? img : ''); }).filter(Boolean);
+  } else if (r.fotoLinks && r.fotoLinks.length) {
+    photoUrls = r.fotoLinks.map(driveImageUrl).filter(Boolean);
+  }
+  lastImgUrls = photoUrls;
+
+  var imgsHtml = '';
+  if (photoUrls.length) {
+    imgsHtml = '<div class="det-block"><div class="det-btitle">📷 Evidencia Fotográfica (' + photoUrls.length + ' foto' + (photoUrls.length > 1 ? 's' : '') + ')</div>' +
+      '<div class="det-imgs">' +
+      photoUrls.map(function (src, idx) {
+        return '<img class="det-img" src="' + src + '" onclick="openLboxByIndex(' + idx + ')" loading="lazy"/>';
+      }).join('') +
+      '</div></div>';
+  }
+
+  var hist = '';
+  if (r.historial && r.historial.length) {
+    hist = '<div class="det-block"><div class="det-btitle">📋 Historial</div><div class="tl">';
+    r.historial.forEach(function (h) {
+      var dc = h.accion === 'autorizado' ? 'a' : (h.accion === 'rechazado' ? 'r' : 's');
+      var ico = { enviado: '📤', autorizado: '✅', rechazado: '❌' }[h.accion] || '📝';
+      var lbl = { enviado: 'Enviado', autorizado: 'Autorizado', rechazado: 'Rechazado' }[h.accion] || h.accion;
+      var dt = h.fecha ? new Date(h.fecha).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+      hist += '<div class="tl-item"><div class="tl-dot ' + dc + '">' + ico + '</div><div class="tl-info"><strong>' + lbl + ' por ' + esc(h.por) + '</strong><span>' + dt + (h.comentario ? ' · ' + esc(h.comentario) : '') + '</span></div></div>';
+    });
+    hist += '</div></div>';
+  }
+
+  var body = '<div class="det-grid">' +
+    dR('Folio', r.folio) + dR('Estado', sBadge(r.status)) +
+    dR('Área', esc(r.area)) + dR('Turno', esc(r.turno || '—')) +
+    dR('Fecha', esc(r.fecha || '—')) + dR('Prioridad', pBadge(r.prioridad)) +
+    dR('Equipo', esc(r.equipo || '—')) + dR('Tarea cumplida', esc(r.tareaCumplida || '—')) +
+    dR('Técnico', esc(r.autorNombre)) + dR('Revisado por', esc(r.supervisorNombre || 'Pendiente')) +
+    (r.supervisorComentario ? '<div class="det-row full"><div class="det-lbl">💬 Comentario Supervisor</div><div class="det-val">' + esc(r.supervisorComentario) + '</div></div>' : '') +
+  '</div>' +
+  blk('✅ Actividades Cumplidas', r.cumplidas) +
+  (r.noCumplidas ? blk('❌ No Cumplidas', r.noCumplidas) : '') +
+  (r.motivoNoCumplida ? blk('Motivo de no cumplimiento', r.motivoNoCumplida) : '') +
+  (r.anomaliasEquipo ? blk('🔧 Anomalías del Equipo', r.anomaliasEquipo) : '') +
+  (r.observaciones ? blk('⚠️ Observaciones', r.observaciones) : '') +
+  (r.comentarios ? blk('💬 Comentarios', r.comentarios) : '') +
+  imgsHtml + hist;
+
+  document.getElementById('mod-rep-body').innerHTML = body;
+  var canDec = S.supIn && r.status === 'pendiente';
+  document.getElementById('mod-rep-footer').innerHTML =
+    '<button class="btn btn-ghost" onclick="closeModal(\'mod-rep\')">Cerrar</button>' +
+    (canDec ? '<button class="btn btn-err" onclick="openDec(\'' + r.folio + '\',\'rechazado\')">❌ Rechazar</button><button class="btn btn-ok" onclick="openDec(\'' + r.folio + '\',\'autorizado\')">✅ Autorizar</button>' : '');
+  openModal('mod-rep');
+}
+function dR(l, val) { return '<div class="det-row"><div class="det-lbl">' + l + '</div><div class="det-val">' + val + '</div></div>'; }
+function blk(t, text) { return '<div class="det-block"><div class="det-btitle">' + t + '</div><p>' + esc(text || '—') + '</p></div>'; }
+
+function openDec(folio, action) {
+  S.decRid = folio; S.decAction = action;
+  var r = null; for (var i = 0; i < S.reports.length; i++) { if (S.reports[i].folio === folio) { r = S.reports[i]; break; } }
+  var isOk = action === 'autorizado';
+  document.getElementById('mod-dec-h').className = 'mh ' + (isOk ? 'ok' : 'err');
+  document.getElementById('mod-dec-title').textContent = isOk ? '✅ Autorizar Reporte' : '❌ Rechazar Reporte';
+  document.getElementById('mod-dec-desc').textContent = (r ? r.folio : '') + ' — "' + (r ? r.titulo : '') + '"';
+  document.getElementById('dec-comment').value = '';
+  document.getElementById('mod-dec-footer').innerHTML =
+    '<button class="btn btn-ghost" onclick="closeModal(\'mod-dec\')">Cancelar</button>' +
+    '<button class="btn ' + (isOk ? 'btn-ok' : 'btn-err') + '" onclick="confirmDec()">' + (isOk ? '✅ Autorizar' : '❌ Rechazar') + '</button>';
+  openModal('mod-dec');
+}
+
+function confirmDec() {
+  var folio = S.decRid, action = S.decAction, comment = v('dec-comment');
+  var hist = { accion: action, por: 'Emmanuel', fecha: new Date().toISOString(), comentario: comment };
+
+  // Actualiza almacenamiento local
+  var reps = loadLocal();
+  var idx = reps.findIndex(function (r) { return r.folio === folio; });
+  if (idx > -1) {
+    reps[idx].status = action;
+    reps[idx].supervisorNombre = 'Emmanuel';
+    reps[idx].supervisorComentario = comment;
+    reps[idx].fechaRevision = new Date().toLocaleString('es-MX');
+    if (!reps[idx].historial) reps[idx].historial = [];
+    reps[idx].historial.push(hist);
+    localStorage.setItem('empaques_reps', JSON.stringify(reps));
+  }
+  // Actualiza en memoria
+  var si = S.reports.findIndex(function (r) { return r.folio === folio; });
+  if (si > -1) {
+    S.reports[si].status = action;
+    S.reports[si].supervisorNombre = 'Emmanuel';
+    S.reports[si].supervisorComentario = comment;
+    if (!S.reports[si].historial) S.reports[si].historial = [];
+    S.reports[si].historial.push(hist);
+  }
+
+  closeModal('mod-dec'); closeModal('mod-rep');
+  renderDash(); renderPend(); renderTodos();
+  toast('⏳ Guardando decisión y enviando correo...', 'acc');
+
+  var sheetUrl = S.cfg.sheetsUrl || SHEETS_URL;
+  fetch(sheetUrl, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateStatus', folio: folio, status: action, supervisor: 'Emmanuel', comentario: comment })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (res && res.ok) {
+        if (res.email && res.email.sent) {
+          toast((action === 'autorizado' ? '✅ Autorizado' : '❌ Rechazado') + ' — correo enviado a soporte y gerencia', 'ok');
+        } else {
+          toast((action === 'autorizado' ? '✅ Autorizado' : '❌ Rechazado') + ' — pero el correo no se pudo enviar (revisa permisos del Apps Script)', 'err');
+        }
+      } else {
+        toast('⚠️ No se pudo confirmar en Google Sheets: ' + ((res && res.error) || 'error desconocido'), 'err');
+      }
+      loadSupReports();
+    })
+    .catch(function (err) {
+      toast('⚠️ Cambios guardados localmente, pero sin conexión al servidor', 'err');
+      console.warn('Error de red al actualizar estado:', err);
+    });
+}
+
+/* ---------------------------------------------------------------------
+   EXPORTAR EXCEL (CSV)
+--------------------------------------------------------------------- */
+function exportExcel() {
+  var h = ['Folio', 'Fecha Envío', 'Técnico', 'Área', 'Turno', 'Fecha Reporte', 'Prioridad', 'Título', 'Equipo', 'Tarea Cumplida', 'Actividades Cumplidas', 'Actividades No Cumplidas', 'Observaciones', 'Comentarios', 'Estado', 'Supervisor', 'Comentario Supervisor'];
+  var rows = S.reports.map(function (r) {
+    return [
+      r.folio, r.fechaEnvio || r.createdAt || '', r.autorNombre, r.area, r.turno, r.fecha,
+      r.prioridad, r.titulo, r.equipo || '', r.tareaCumplida || '', r.cumplidas || '', r.noCumplidas || '',
+      r.observaciones || '', r.comentarios || '',
+      r.status, r.supervisorNombre || '', r.supervisorComentario || ''
+    ];
+  });
+  var csv = [h].concat(rows).map(function (r) { return r.map(function (c) { return '"' + String(c || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
+  a.download = 'reportes_empaques_' + today() + '.csv';
+  a.click();
+  toast('⬇️ Descargando Excel...', 'acc');
+}
+
+/* ---------------------------------------------------------------------
+   IMÁGENES — carga, redimensión/compresión, preview
+--------------------------------------------------------------------- */
+function handleImgs(e) {
+  var files = Array.from(e.target.files).slice(0, 3 - S.imgs.length);
+  if (!files.length) { e.target.value = ''; return; }
+  var remaining = files.length;
+  files.forEach(function (file) {
+    if (!file.type || file.type.indexOf('image/') !== 0) { toast('Solo se permiten imágenes', 'err'); remaining--; return; }
+    if (file.size > 12 * 1024 * 1024) { toast('Imagen demasiado grande (máx 12MB)', 'err'); remaining--; return; }
+    resizeImage(file, 1600, 0.82, function (dataUrl) {
+      S.imgs.push({ name: file.name, dataUrl: dataUrl });
+      remaining--;
+      if (remaining === 0) renderPrev();
+    });
+  });
+  e.target.value = '';
+}
+
+// Redimensiona a un máximo de `maxDim` px por lado y comprime a JPEG.
+// Esto reduce muchísimo el tamaño de las fotos de celular (de varios MB
+// a unos cientos de KB) para que la subida a Drive sea rápida y confiable.
+function resizeImage(file, maxDim, quality, cb) {
+  var reader = new FileReader();
+  reader.onload = function (ev) {
+    var img = new Image();
+    img.onload = function () {
+      var w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      try {
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', quality);
+        cb(dataUrl);
+      } catch (err) {
+        cb(ev.target.result);
+      }
+    };
+    img.onerror = function () { cb(ev.target.result); };
+    img.src = ev.target.result;
+  };
+  reader.onerror = function () { toast('No se pudo leer la imagen', 'err'); };
+  reader.readAsDataURL(file);
+}
+
+function renderPrev() {
+  document.getElementById('nr-img-prev').innerHTML = S.imgs.map(function (img, i) {
+    return '<div class="img-prev"><img src="' + img.dataUrl + '"/><button class="img-prev-del" onclick="removeImg(' + i + ')">✕</button></div>';
+  }).join('');
+}
+function removeImg(i) { S.imgs.splice(i, 1); renderPrev(); }
+
+/* ---------------------------------------------------------------------
+   UTILIDADES / UI
+--------------------------------------------------------------------- */
+function v(id) { return (document.getElementById(id) || {}).value || ''; }
+function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function showScreen(id) { document.querySelectorAll('.screen').forEach(function (s) { s.classList.remove('active'); }); document.getElementById('sc-' + id).classList.add('active'); }
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function openLbox(url) { document.getElementById('lbox-img').src = url; document.getElementById('lbox').classList.remove('hidden'); }
+function supTab(id) {
+  ['dash', 'pend', 'todos'].forEach(function (t) {
+    document.getElementById('stab-' + t).classList.toggle('active', t === id);
+    document.getElementById('spanel-' + t).classList.toggle('active', t === id);
+  });
+}
+function sBadge(s) {
+  var m = { pendiente: ['b-pend', '⏳ Pendiente'], autorizado: ['b-ok', '✅ Autorizado'], rechazado: ['b-err', '❌ Rechazado'] };
+  var p = m[s] || m.pendiente;
+  return '<span class="badge ' + p[0] + '"><span class="bdot"></span>' + p[1] + '</span>';
+}
+function pBadge(p) { var m = { Alta: 'b-alta', Crítica: 'b-crit', Normal: 'b-norm' }; return '<span class="badge ' + (m[p] || 'b-norm') + '">' + (p || 'Normal') + '</span>'; }
+function limpiarForm() {
+  ['nr-titulo', 'nr-equipo', 'nr-cumplidas', 'nr-nocumplidas', 'nr-motivo-nocumplida', 'nr-anomalias', 'nr-obs', 'nr-comentarios'].forEach(function (id) { document.getElementById(id).value = ''; });
+  document.getElementById('nr-turno').value = ''; document.getElementById('nr-prioridad').value = 'Normal'; document.getElementById('nr-tarea-cumplida').value = '';
+  document.getElementById('nr-fecha').value = today(); S.imgs = []; renderPrev();
+}
+var tT;
+function toast(msg, type) {
+  var ex = document.querySelector('.toast'); if (ex) ex.remove();
+  clearTimeout(tT);
+  var t = document.createElement('div');
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  tT = setTimeout(function () { t.remove(); }, 3800);
+}
+</script>
+</body>
+</html>
