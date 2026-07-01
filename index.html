@@ -604,7 +604,8 @@ function cambiarNombre(){
 function enviarReporte(){
   if(!S.tecNombre){document.getElementById('name-ov').classList.remove('hidden');return;}
   var titulo=v('nr-titulo'),area=v('nr-area'),turno=v('nr-turno'),fecha=v('nr-fecha'),cumplidas=v('nr-cumplidas');
-  if(!titulo||!area||!turno||!cumplidas){toast('Completa: área, turno, título y actividades cumplidas','err');return;}
+  var equipo=v('nr-equipo'), tareaCumplida=v('nr-tarea-cumplida');
+  if(!titulo||!area||!turno||!equipo||!tareaCumplida||!cumplidas){toast('Completa: área, turno, equipo, tarea cumplida, título y actividades cumplidas','err');return;}
   var folio='RPT-'+Date.now().toString().slice(-6);
   // Extraer base64 de las imágenes para guardar con el reporte
   var imagenesBase64=S.imgs.map(function(img){ return {name:img.name, dataUrl:img.dataUrl}; });
