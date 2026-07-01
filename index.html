@@ -147,6 +147,9 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 .det-lbl{font-size:.66rem;font-weight:700;color:var(--g600);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.1rem}
 .det-val{font-size:.86rem;color:var(--g800);font-weight:500}
 .det-block{margin-bottom:.95rem}
+.det-imgs{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:.5rem}
+.det-img{width:100px;height:100px;object-fit:cover;border-radius:.5rem;border:1.5px solid var(--g200);cursor:pointer;transition:.15s}
+.det-img:hover{border-color:var(--acc);transform:scale(1.04)}
 .det-btitle{font-size:.69rem;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;padding-bottom:.26rem;border-bottom:1px solid var(--g200)}
 .det-block p{font-size:.86rem;color:var(--g800);line-height:1.65;white-space:pre-wrap}
 
@@ -367,7 +370,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
         </div>
       </div>
 
-      <div class="fsec">Equipo atendido</div>
+      <div class="fsec">⚙️ Equipo Atendido</div>
       <div class="frow">
         <div class="fg"><label>Equipo / Máquina / Línea</label>
           <input type="text" id="nr-equipo" placeholder="Ej. Impresora 2, Línea 3, Montacargas 1"/>
@@ -375,7 +378,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
         <div class="fg"><label>¿Se cumplió la tarea del equipo?</label>
           <select id="nr-tarea-cumplida">
             <option value="">Seleccionar...</option>
-            <option value="Si">Si</option>
+            <option value="Si">Sí</option>
             <option value="Parcial">Parcial</option>
             <option value="No">No</option>
           </select>
@@ -383,7 +386,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
       </div>
 
       <div class="fsec">✅ Actividades Cumplidas</div>
-      <div class="fg"><label>Describe las actividades que SÍ se realizaron durante el turno</label>
+      <div class="fg"><label>Actividades que SÍ se realizaron durante el turno</label>
         <textarea id="nr-cumplidas" placeholder="Detalla cada actividad completada..."></textarea>
       </div>
 
@@ -395,7 +398,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
         <textarea id="nr-motivo-nocumplida" placeholder="Explica por qué no se cumplió la actividad..."></textarea>
       </div>
 
-      <div class="fsec">Anomalías del Equipo</div>
+      <div class="fsec">🔧 Anomalías del Equipo</div>
       <div class="fg"><label>Describe las anomalías que presenta el equipo</label>
         <textarea id="nr-anomalias" placeholder="Ej. Ruido anormal, fuga, vibración, paro intermitente, sensor dañado..."></textarea>
       </div>
@@ -540,8 +543,9 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
   <img id="lbox-img" src="" alt=""/>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-const S={cfg:{},tecNombre:'',tecArea:'',imgs:[],reports:[],decRid:null,decAction:null,supIn:false,supTimer:null,supLoading:false};
+const S={cfg:{},tecNombre:'',tecArea:'',imgs:[],reports:[],decRid:null,decAction:null,supIn:false};
 
 window.onload=function(){
   loadCfg();
@@ -553,49 +557,25 @@ window.onload=function(){
     applyNombre();
     document.getElementById('name-ov').classList.add('hidden');
   }
+  if(S.cfg.ejsPubkey){try{emailjs.init(S.cfg.ejsPubkey);}catch(e){}}
 };
 
-var SHEETS_URL=location.href.indexOf('script.google.com')>=0
-  ? location.href.split('?')[0]
-  : 'https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec';
+var SHEETS_URL='https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec';
 function loadCfg(){
   try{ S.cfg=JSON.parse(localStorage.getItem('empaques_cfg')||'{}'); }catch(e){ S.cfg={}; }
   S.cfg.sheetsUrl = SHEETS_URL; // siempre usar la URL hardcodeada
   S.cfg.ger1 = 'soporte@molub.com.mx';
   S.cfg.ger2 = 'gerenciaventas@molub.com.mx';
 }
-function getReportsUrl(url){
-  var base=(url||SHEETS_URL).split('?')[0];
-  return base+'?api=reports&t='+Date.now();
-}
-function postToAppsScript(payload){
-  return new Promise(function(resolve,reject){
-    if(window.google&&google.script&&google.script.run){
-      google.script.run
-        .withSuccessHandler(function(res){
-          if(res&&res.ok===false) reject(new Error(res.error||'Error en Apps Script'));
-          else resolve(res||{ok:true});
-        })
-        .withFailureHandler(function(err){
-          reject(new Error((err&&err.message)||String(err)||'Error en Apps Script'));
-        })
-        .apiPost(payload);
-      return;
-    }
-    fetch(S.cfg.sheetsUrl||SHEETS_URL,{method:'POST',body:JSON.stringify(payload),mode:'no-cors'})
-      .then(function(){resolve({ok:true,opaque:true});})
-      .catch(reject);
-  });
-}
 function applyCfgForm(){
   // Panel de config eliminado — nada que hacer
 }
 function saveConfig(){
-  S.cfg={sheetsUrl:SHEETS_URL,ger1:'soporte@molub.com.mx',ger2:'gerenciaventas@molub.com.mx'};
+  S.cfg={sheetsUrl:v('c-sheets-url')||'https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec',ejsService:v('c-ejsSvc'),ejsTemplate:v('c-ejsTpl'),ejsPubkey:v('c-ejsKey'),supUser:v('c-supUser'),supPass:v('c-supPass'),ger1:v('c-ger1'),ger2:v('c-ger2'),ger3:v('c-ger3')};
   localStorage.setItem('empaques_cfg',JSON.stringify(S.cfg));
+  if(S.cfg.ejsPubkey){try{emailjs.init(S.cfg.ejsPubkey);}catch(e){}}
   toast('✅ Configuración guardada');
-  var cfgStatus=document.getElementById('cfg-status');
-  if(cfgStatus) cfgStatus.textContent='✅ Guardado correctamente';
+  document.getElementById('cfg-status').textContent='✅ Guardado correctamente';
 }
 
 function confirmarNombre(){
@@ -624,8 +604,7 @@ function cambiarNombre(){
 function enviarReporte(){
   if(!S.tecNombre){document.getElementById('name-ov').classList.remove('hidden');return;}
   var titulo=v('nr-titulo'),area=v('nr-area'),turno=v('nr-turno'),fecha=v('nr-fecha'),cumplidas=v('nr-cumplidas');
-  var equipo=v('nr-equipo'), tareaCumplida=v('nr-tarea-cumplida');
-  if(!titulo||!area||!turno||!equipo||!tareaCumplida||!cumplidas){toast('Completa: área, turno, equipo, cumplimiento, título y actividades cumplidas','err');return;}
+  if(!titulo||!area||!turno||!cumplidas){toast('Completa: área, turno, título y actividades cumplidas','err');return;}
   var folio='RPT-'+Date.now().toString().slice(-6);
   // Extraer base64 de las imágenes para guardar con el reporte
   var imagenesBase64=S.imgs.map(function(img){ return {name:img.name, dataUrl:img.dataUrl}; });
@@ -644,12 +623,15 @@ function enviarReporte(){
     historial:[{accion:'enviado',por:S.tecNombre,fecha:new Date().toISOString(),comentario:''}]
   };
   saveLocal(rep);
+  var sheetUrl=S.cfg.sheetsUrl||SHEETS_URL;
   var btn=document.getElementById('btn-enviar');
   btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span>Enviando...';
   btn.disabled=true;
-  postToAppsScript(rep)
+  // Para Sheets enviamos el reporte SIN las imágenes (muy pesadas) — solo el conteo
+  var repSheets=Object.assign({},rep,{imagenes: rep.imagenes&&rep.imagenes.length ? rep.imagenes.length+' foto(s)' : 'Sin fotos'});
+  fetch(sheetUrl,{method:'POST',body:JSON.stringify(repSheets),mode:'no-cors'})
     .then(function(){ toast('✅ Reporte enviado y guardado en Google Sheets','ok'); })
-    .catch(function(err){ toast('✅ Guardado localmente — '+(err.message||'sin conexión a Sheets'),'acc'); })
+    .catch(function(){ toast('✅ Guardado localmente — sin conexión a Sheets','acc'); })
     .finally(function(){ btn.innerHTML='📤 Enviar Reporte'; btn.disabled=false; });
   limpiarForm();
 }
@@ -665,101 +647,72 @@ function loadLocal(){return JSON.parse(localStorage.getItem('empaques_reps')||'[
 var SUP_USER = 'emmanuel';
 var SUP_PASS = '1234';
 function doLogin(){
-  var user=v('lg-user').trim().toLowerCase(), pass=v('lg-pass').trim();
+  var user=v('lg-user'), pass=v('lg-pass');
   if(!user||!pass){ toast('Ingresa usuario y contraseña','err'); return; }
   if(user===SUP_USER && pass===SUP_PASS){
     S.supIn=true;
     showScreen('supervisor');
     loadSupReports();
-    startSupAutoRefresh();
   } else {
     toast('❌ Usuario o contraseña incorrectos','err');
   }
 }
-function doLogout(){S.supIn=false;stopSupAutoRefresh();showScreen('tecnico');}
+function doLogout(){S.supIn=false;showScreen('tecnico');}
 
-function startSupAutoRefresh(){
-  stopSupAutoRefresh();
-  S.supTimer=setInterval(function(){
-    if(S.supIn) loadSupReports(true);
-  },15000);
-}
-function stopSupAutoRefresh(){
-  if(S.supTimer){clearInterval(S.supTimer);S.supTimer=null;}
-}
-
-function loadSupReports(silent){
-  if(S.supLoading) return;
-  S.supLoading=true;
-  if(!silent){
-    S.reports=loadLocal();
-    renderDash();renderPend();renderTodos();
-  }
+function loadSupReports(){
+  S.reports=loadLocal();
+  renderDash();renderPend();renderTodos();
+  // Intentar cargar también desde Google Sheets para tener datos completos
   var sheetUrl=S.cfg.sheetsUrl||SHEETS_URL;
-  fetch(getReportsUrl(sheetUrl))
+  fetch(sheetUrl)
     .then(function(r){return r.json();})
     .then(function(rows){
       if(!Array.isArray(rows)||rows.length<2) return;
       var headers=rows[0];
-      function col(){for(var i=0;i<arguments.length;i++){var idx=headers.indexOf(arguments[i]);if(idx>=0)return idx;}return -1;}
-      function cell(row,idx){return idx>=0?(row[idx]||''):'';}
-      var folioIdx=col('Folio');
-      var tituloIdx=col('Titulo','Título');
-      var tecnicoIdx=col('Tecnico','Técnico');
-      var areaIdx=col('Area','Área');
-      var turnoIdx=col('Turno');
-      var fechaIdx=col('Fecha del Reporte');
-      var prioIdx=col('Prioridad');
-      var equipoIdx=col('Equipo Atendido','Equipo atendido');
-      var tareaIdx=col('Tarea Cumplida','Tarea cumplida');
-      var cumpIdx=col('Actividades Cumplidas');
-      var nocumpIdx=col('Actividades No Cumplidas');
-      var motivoIdx=col('Motivo No Cumplida','Motivo no cumplida');
-      var anomIdx=col('Anomalias del Equipo','Anomalías del Equipo','Anomalias');
-      var obsIdx=col('Observaciones');
-      var comIdx=col('Comentarios Adicionales');
-      var statusIdx=col('Estado');
-      var supIdx=col('Supervisor');
-      var supComIdx=col('Comentario del Supervisor');
-      var fechaEnvioIdx=col('Fecha de Envio','Fecha de Envío');
-      var fotoIdx=col('Fotografias','Fotografías');
-      var fotoLinksIdx=col('Links Fotografias','Links Fotografías');
+      var folioIdx=headers.indexOf('Folio');
+      var tituloIdx=headers.indexOf('Título');
+      var tecnicoIdx=headers.indexOf('Técnico');
+      var areaIdx=headers.indexOf('Área');
+      var turnoIdx=headers.indexOf('Turno');
+      var fechaIdx=headers.indexOf('Fecha del Reporte');
+      var prioIdx=headers.indexOf('Prioridad');
+      var cumpIdx=headers.indexOf('Actividades Cumplidas');
+      var nocumpIdx=headers.indexOf('Actividades No Cumplidas');
+      var obsIdx=headers.indexOf('Observaciones');
+      var comIdx=headers.indexOf('Comentarios Adicionales');
+      var statusIdx=headers.indexOf('Estado');
+      var supIdx=headers.indexOf('Supervisor');
+      var supComIdx=headers.indexOf('Comentario del Supervisor');
+      var fechaEnvioIdx=headers.indexOf('Fecha de Envío');
+      // Mapa de reportes locales para preservar historial
       var localMap={};
       S.reports.forEach(function(r){ localMap[r.folio]=r; });
-      var sheetReps=rows.slice(1).filter(function(r){return cell(r,folioIdx);}).map(function(r){
-        var local=localMap[cell(r,folioIdx)]||{};
-        var fotoLinks=String(cell(r,fotoLinksIdx)||'').split(/\n+/).filter(Boolean);
+      var sheetReps=rows.slice(1).filter(function(r){return r[folioIdx];}).map(function(r){
+        var local=localMap[r[folioIdx]]||{};
         return {
-          folio:cell(r,folioIdx),
-          titulo:cell(r,tituloIdx),
-          autorNombre:cell(r,tecnicoIdx),
-          area:cell(r,areaIdx),
-          turno:cell(r,turnoIdx),
-          fecha:cell(r,fechaIdx),
-          prioridad:cell(r,prioIdx)||'Normal',
-          equipo:cell(r,equipoIdx),
-          tareaCumplida:cell(r,tareaIdx),
-          cumplidas:cell(r,cumpIdx),
-          noCumplidas:cell(r,nocumpIdx),
-          motivoNoCumplida:cell(r,motivoIdx),
-          anomaliasEquipo:cell(r,anomIdx),
-          observaciones:cell(r,obsIdx),
-          comentarios:cell(r,comIdx),
-          imagenes:local.imagenes||fotoLinks.map(function(url){return {dataUrl:driveImageUrl(url),url:url,viewUrl:url,name:'Foto'};}),
-          fotoResumen:cell(r,fotoIdx),
-          status:String(cell(r,statusIdx)||'pendiente').toLowerCase(),
-          supervisorNombre:cell(r,supIdx),
-          supervisorComentario:cell(r,supComIdx),
-          fechaEnvio:cell(r,fechaEnvioIdx),
-          createdAt:local.createdAt||cell(r,fechaEnvioIdx),
+          folio:r[folioIdx]||'',
+          titulo:r[tituloIdx]||'',
+          autorNombre:r[tecnicoIdx]||'',
+          area:r[areaIdx]||'',
+          turno:r[turnoIdx]||'',
+          fecha:r[fechaIdx]||'',
+          prioridad:r[prioIdx]||'Normal',
+          cumplidas:r[cumpIdx]||'',
+          noCumplidas:r[nocumpIdx]||'',
+          observaciones:r[obsIdx]||'',
+          comentarios:r[comIdx]||'',
+          status:(r[statusIdx]||'pendiente').toLowerCase(),
+          supervisorNombre:r[supIdx]||'',
+          supervisorComentario:r[supComIdx]||'',
+          fechaEnvio:r[fechaEnvioIdx]||'',
+          createdAt:local.createdAt||r[fechaEnvioIdx]||'',
           historial:local.historial||[]
         };
       });
       S.reports=sheetReps;
       renderDash();renderPend();renderTodos();
     })
-    .catch(function(e){ if(!silent) console.log('Sheets no disponible, usando datos locales'); })
-    .finally(function(){S.supLoading=false;});
+    .catch(function(e){ console.log('Sheets no disponible, usando datos locales'); });
 }
 
 function renderDash(){
@@ -816,6 +769,7 @@ function openDetalle(folio){
   for(var i=0;i<S.reports.length;i++){if(S.reports[i].folio===folio){r=S.reports[i];break;}}
   if(!r)return;
   document.getElementById('mod-rep-title').textContent=r.folio+' — '+r.titulo;
+  // Mostrar imágenes base64 guardadas con el reporte
   var imgsHtml='';
   if(r.imagenes&&r.imagenes.length){
     var hasObjects=typeof r.imagenes[0]==='object';
@@ -823,7 +777,7 @@ function openDetalle(folio){
       '<div class="det-imgs">'+
       r.imagenes.map(function(img){
         var src=driveImageUrl(hasObjects?(img.dataUrl||img.url||img.viewUrl||img):(typeof img==='string'?img:''));
-        return src?'<img class="det-img" src="'+escAttr(src)+'" onclick="openLbox(\''+escAttr(src)+'\')" loading="lazy"/>':'';
+        return src?'<img class="det-img" src="'+src+'" onclick="openLbox(''+src+'')" loading="lazy"/>':'';
       }).join('')+
       '</div></div>';
   }
@@ -850,7 +804,7 @@ function openDetalle(folio){
   blk('✅ Actividades Cumplidas',r.cumplidas)+
   (r.noCumplidas?blk('❌ No Cumplidas',r.noCumplidas):'')+
   (r.motivoNoCumplida?blk('Motivo de no cumplimiento',r.motivoNoCumplida):'')+
-  (r.anomaliasEquipo?blk('Anomalías del Equipo',r.anomaliasEquipo):'')+
+  (r.anomaliasEquipo?blk('🔧 Anomalías del Equipo',r.anomaliasEquipo):'')+
   (r.observaciones?blk('⚠️ Observaciones',r.observaciones):'')+
   (r.comentarios?blk('💬 Comentarios',r.comentarios):'')+
   imgsHtml+hist;
@@ -901,32 +855,54 @@ function confirmDec(){
     if(!S.reports[si].historial)S.reports[si].historial=[];
     S.reports[si].historial.push(hist);
   }
-  // 3. Actualizar en Google Sheets y enviar correo desde Apps Script
-  postToAppsScript({action:'updateStatus',folio:folio,status:action,supervisor:'Emmanuel',comentario:comment})
-    .then(function(res){
-      if(res&&res.email&&res.email.sent===false){
-        toast('⚠️ Estado actualizado, pero correo falló: '+res.email.error,'err');
-      }else{
-        toast(action==='autorizado'
-          ? '✅ Autorizado — correo enviado a soporte y gerencia'
-          : '❌ Rechazado — correo enviado a soporte y gerencia',
-          action==='autorizado'?'ok':'err');
-      }
-      loadSupReports(true);
-    })
-    .catch(function(e){
-      console.warn('Sheets update:',e);
-      toast('⚠️ Se actualizó local, pero Google no confirmó: '+(e.message||e),'err');
-    });
+  // 3. Actualizar en Google Sheets
+  var sheetUrl=S.cfg.sheetsUrl||SHEETS_URL;
+  fetch(sheetUrl,{
+    method:'POST',
+    body:JSON.stringify({action:'updateStatus',folio:folio,status:action,supervisor:'Emmanuel',comentario:comment}),
+    mode:'no-cors'
+  }).catch(function(e){console.warn('Sheets update:',e);});
+  // 4. Enviar correo a gerentes
+  if(si>-1) notifyGerentes(S.reports[si]);
   closeModal('mod-dec'); closeModal('mod-rep');
+  var msg=action==='autorizado'
+    ? '✅ Autorizado — correo enviado a soporte y gerencia'
+    : '❌ Rechazado — correo enviado a soporte y gerencia';
+  toast(msg, action==='autorizado'?'ok':'err');
   renderDash(); renderPend(); renderTodos();
 }
 
+function notifyGerentes(rep){
+  var c=S.cfg;
+  if(!c.ejsService||!c.ejsTemplate){ console.warn('EmailJS no configurado'); return; }
+  // Correos fijos de gerencia — siempre reciben la notificación
+  var recips=['soporte@molub.com.mx','gerenciaventas@molub.com.mx'];
+  // Agregar correos extra configurados (si existen)
+  [c.ger1,c.ger2,c.ger3].forEach(function(e){ if(e&&recips.indexOf(e)<0) recips.push(e); });
+  var sl=rep.status==='autorizado'?'✅ AUTORIZADO':'❌ RECHAZADO';
+  recips.forEach(function(email){
+    try{
+      emailjs.send(c.ejsService,c.ejsTemplate,{
+        to_email:email,
+        from_name:'Emmanuel — Empaques Modernos de Guadalajara',
+        report_folio:rep.folio,
+        report_title:rep.titulo,
+        report_status:sl,
+        report_area:rep.area,
+        report_tecnico:rep.autorNombre,
+        report_turno:rep.turno||'',
+        report_fecha:rep.fecha||'',
+        supervisor_comment:rep.supervisorComentario||'Sin comentarios adicionales.'
+      });
+    }catch(e){ console.warn('EmailJS error:',e); }
+  });
+}
+
 function exportExcel(){
-  var h=['Folio','Fecha Envío','Técnico','Área','Turno','Fecha Reporte','Prioridad','Título','Equipo','Tarea Cumplida','Actividades Cumplidas','Actividades No Cumplidas','Motivo No Cumplida','Anomalías del Equipo','Observaciones','Comentarios','Estado','Supervisor','Comentario Supervisor'];
+  var h=['Folio','Fecha Envío','Técnico','Área','Turno','Fecha Reporte','Prioridad','Título','Actividades Cumplidas','Actividades No Cumplidas','Observaciones','Comentarios','Estado','Supervisor','Comentario Supervisor'];
   var rows=S.reports.map(function(r){return[
     r.folio, r.fechaEnvio||r.createdAt||'', r.autorNombre, r.area, r.turno, r.fecha,
-    r.prioridad, r.titulo, r.equipo||'', r.tareaCumplida||'', r.cumplidas||'', r.noCumplidas||'', r.motivoNoCumplida||'', r.anomaliasEquipo||'',
+    r.prioridad, r.titulo, r.cumplidas||'', r.noCumplidas||'',
     r.observaciones||'', r.comentarios||'',
     r.status, r.supervisorNombre||'', r.supervisorComentario||''
   ];});
@@ -970,12 +946,6 @@ function removeImg(i){S.imgs.splice(i,1);renderPrev();}
 
 function v(id){return(document.getElementById(id)||{}).value||'';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-function driveImageUrl(url){
-  url=String(url||'');
-  var m=url.match(/\/file\/d\/([^/]+)/);
-  return m ? 'https://drive.google.com/uc?export=view&id='+m[1] : url;
-}
 function today(){return new Date().toISOString().split('T')[0];}
 function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById('sc-'+id).classList.add('active');}
 function openModal(id){document.getElementById(id).classList.remove('hidden');}
