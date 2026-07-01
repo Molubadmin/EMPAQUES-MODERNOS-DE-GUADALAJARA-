@@ -367,14 +367,37 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
         </div>
       </div>
 
+      <div class="fsec">Equipo atendido</div>
+      <div class="frow">
+        <div class="fg"><label>Equipo / Máquina / Línea</label>
+          <input type="text" id="nr-equipo" placeholder="Ej. Impresora 2, Línea 3, Montacargas 1"/>
+        </div>
+        <div class="fg"><label>¿Se cumplió la tarea del equipo?</label>
+          <select id="nr-tarea-cumplida">
+            <option value="">Seleccionar...</option>
+            <option value="Si">Si</option>
+            <option value="Parcial">Parcial</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+
       <div class="fsec">✅ Actividades Cumplidas</div>
       <div class="fg"><label>Describe las actividades que SÍ se realizaron durante el turno</label>
         <textarea id="nr-cumplidas" placeholder="Detalla cada actividad completada..."></textarea>
       </div>
 
       <div class="fsec">❌ Actividades No Cumplidas</div>
-      <div class="fg"><label>Actividades pendientes y motivo</label>
-        <textarea id="nr-nocumplidas" placeholder="Indica qué no se realizó y por qué..."></textarea>
+      <div class="fg"><label>Actividad del equipo que NO se cumplió</label>
+        <textarea id="nr-nocumplidas" placeholder="Indica qué actividad no se realizó..."></textarea>
+      </div>
+      <div class="fg" style="margin-top:.85rem"><label>Motivo / causa de no cumplimiento</label>
+        <textarea id="nr-motivo-nocumplida" placeholder="Explica por qué no se cumplió la actividad..."></textarea>
+      </div>
+
+      <div class="fsec">Anomalías del Equipo</div>
+      <div class="fg"><label>Describe las anomalías que presenta el equipo</label>
+        <textarea id="nr-anomalias" placeholder="Ej. Ruido anormal, fuga, vibración, paro intermitente, sensor dañado..."></textarea>
       </div>
 
       <div class="fsec">⚠️ Observaciones y Riesgos</div>
@@ -518,7 +541,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 </div>
 
 <script>
-const S={cfg:{},tecNombre:'',tecArea:'',imgs:[],reports:[],decRid:null,decAction:null,supIn:false};
+const S={cfg:{},tecNombre:'',tecArea:'',imgs:[],reports:[],decRid:null,decAction:null,supIn:false,supTimer:null,supLoading:false};
 
 window.onload=function(){
   loadCfg();
@@ -543,7 +566,26 @@ function loadCfg(){
 }
 function getReportsUrl(url){
   var base=(url||SHEETS_URL).split('?')[0];
-  return base+'?api=reports';
+  return base+'?api=reports&t='+Date.now();
+}
+function postToAppsScript(payload){
+  return new Promise(function(resolve,reject){
+    if(window.google&&google.script&&google.script.run){
+      google.script.run
+        .withSuccessHandler(function(res){
+          if(res&&res.ok===false) reject(new Error(res.error||'Error en Apps Script'));
+          else resolve(res||{ok:true});
+        })
+        .withFailureHandler(function(err){
+          reject(new Error((err&&err.message)||String(err)||'Error en Apps Script'));
+        })
+        .apiPost(payload);
+      return;
+    }
+    fetch(S.cfg.sheetsUrl||SHEETS_URL,{method:'POST',body:JSON.stringify(payload),mode:'no-cors'})
+      .then(function(){resolve({ok:true,opaque:true});})
+      .catch(reject);
+  });
 }
 function applyCfgForm(){
   // Panel de config eliminado — nada que hacer
@@ -582,7 +624,8 @@ function cambiarNombre(){
 function enviarReporte(){
   if(!S.tecNombre){document.getElementById('name-ov').classList.remove('hidden');return;}
   var titulo=v('nr-titulo'),area=v('nr-area'),turno=v('nr-turno'),fecha=v('nr-fecha'),cumplidas=v('nr-cumplidas');
-  if(!titulo||!area||!turno||!cumplidas){toast('Completa: área, turno, título y actividades cumplidas','err');return;}
+  var equipo=v('nr-equipo'), tareaCumplida=v('nr-tarea-cumplida');
+  if(!titulo||!area||!turno||!equipo||!tareaCumplida||!cumplidas){toast('Completa: área, turno, equipo, cumplimiento, título y actividades cumplidas','err');return;}
   var folio='RPT-'+Date.now().toString().slice(-6);
   // Extraer base64 de las imágenes para guardar con el reporte
   var imagenesBase64=S.imgs.map(function(img){ return {name:img.name, dataUrl:img.dataUrl}; });
@@ -590,7 +633,10 @@ function enviarReporte(){
     folio:folio, fechaEnvio:new Date().toLocaleString('es-MX'),
     tecnico:S.tecNombre, area:area, turno:turno, fecha:fecha,
     prioridad:v('nr-prioridad')||'Normal', titulo:titulo,
+    equipo:equipo, tareaCumplida:tareaCumplida,
     cumplidas:cumplidas, noCumplidas:v('nr-nocumplidas'),
+    motivoNoCumplida:v('nr-motivo-nocumplida'),
+    anomaliasEquipo:v('nr-anomalias'),
     observaciones:v('nr-obs'), comentarios:v('nr-comentarios'),
     imagenes:imagenesBase64,
     autorNombre:S.tecNombre, status:'pendiente',
@@ -598,13 +644,12 @@ function enviarReporte(){
     historial:[{accion:'enviado',por:S.tecNombre,fecha:new Date().toISOString(),comentario:''}]
   };
   saveLocal(rep);
-  var sheetUrl=S.cfg.sheetsUrl||SHEETS_URL;
   var btn=document.getElementById('btn-enviar');
   btn.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:.35rem"></span>Enviando...';
   btn.disabled=true;
-  fetch(sheetUrl,{method:'POST',body:JSON.stringify(rep),mode:'no-cors'})
+  postToAppsScript(rep)
     .then(function(){ toast('✅ Reporte enviado y guardado en Google Sheets','ok'); })
-    .catch(function(){ toast('✅ Guardado localmente — sin conexión a Sheets','acc'); })
+    .catch(function(err){ toast('✅ Guardado localmente — '+(err.message||'sin conexión a Sheets'),'acc'); })
     .finally(function(){ btn.innerHTML='📤 Enviar Reporte'; btn.disabled=false; });
   limpiarForm();
 }
@@ -626,66 +671,95 @@ function doLogin(){
     S.supIn=true;
     showScreen('supervisor');
     loadSupReports();
+    startSupAutoRefresh();
   } else {
     toast('❌ Usuario o contraseña incorrectos','err');
   }
 }
-function doLogout(){S.supIn=false;showScreen('tecnico');}
+function doLogout(){S.supIn=false;stopSupAutoRefresh();showScreen('tecnico');}
 
-function loadSupReports(){
-  S.reports=loadLocal();
-  renderDash();renderPend();renderTodos();
-  // Intentar cargar también desde Google Sheets para tener datos completos
+function startSupAutoRefresh(){
+  stopSupAutoRefresh();
+  S.supTimer=setInterval(function(){
+    if(S.supIn) loadSupReports(true);
+  },15000);
+}
+function stopSupAutoRefresh(){
+  if(S.supTimer){clearInterval(S.supTimer);S.supTimer=null;}
+}
+
+function loadSupReports(silent){
+  if(S.supLoading) return;
+  S.supLoading=true;
+  if(!silent){
+    S.reports=loadLocal();
+    renderDash();renderPend();renderTodos();
+  }
   var sheetUrl=S.cfg.sheetsUrl||SHEETS_URL;
   fetch(getReportsUrl(sheetUrl))
     .then(function(r){return r.json();})
     .then(function(rows){
       if(!Array.isArray(rows)||rows.length<2) return;
       var headers=rows[0];
-      var folioIdx=headers.indexOf('Folio');
-      var tituloIdx=headers.indexOf('Título');
-      var tecnicoIdx=headers.indexOf('Técnico');
-      var areaIdx=headers.indexOf('Área');
-      var turnoIdx=headers.indexOf('Turno');
-      var fechaIdx=headers.indexOf('Fecha del Reporte');
-      var prioIdx=headers.indexOf('Prioridad');
-      var cumpIdx=headers.indexOf('Actividades Cumplidas');
-      var nocumpIdx=headers.indexOf('Actividades No Cumplidas');
-      var obsIdx=headers.indexOf('Observaciones');
-      var comIdx=headers.indexOf('Comentarios Adicionales');
-      var statusIdx=headers.indexOf('Estado');
-      var supIdx=headers.indexOf('Supervisor');
-      var supComIdx=headers.indexOf('Comentario del Supervisor');
-      var fechaEnvioIdx=headers.indexOf('Fecha de Envío');
-      // Mapa de reportes locales para preservar historial
+      function col(){for(var i=0;i<arguments.length;i++){var idx=headers.indexOf(arguments[i]);if(idx>=0)return idx;}return -1;}
+      function cell(row,idx){return idx>=0?(row[idx]||''):'';}
+      var folioIdx=col('Folio');
+      var tituloIdx=col('Titulo','Título');
+      var tecnicoIdx=col('Tecnico','Técnico');
+      var areaIdx=col('Area','Área');
+      var turnoIdx=col('Turno');
+      var fechaIdx=col('Fecha del Reporte');
+      var prioIdx=col('Prioridad');
+      var equipoIdx=col('Equipo Atendido','Equipo atendido');
+      var tareaIdx=col('Tarea Cumplida','Tarea cumplida');
+      var cumpIdx=col('Actividades Cumplidas');
+      var nocumpIdx=col('Actividades No Cumplidas');
+      var motivoIdx=col('Motivo No Cumplida','Motivo no cumplida');
+      var anomIdx=col('Anomalias del Equipo','Anomalías del Equipo','Anomalias');
+      var obsIdx=col('Observaciones');
+      var comIdx=col('Comentarios Adicionales');
+      var statusIdx=col('Estado');
+      var supIdx=col('Supervisor');
+      var supComIdx=col('Comentario del Supervisor');
+      var fechaEnvioIdx=col('Fecha de Envio','Fecha de Envío');
+      var fotoIdx=col('Fotografias','Fotografías');
+      var fotoLinksIdx=col('Links Fotografias','Links Fotografías');
       var localMap={};
       S.reports.forEach(function(r){ localMap[r.folio]=r; });
-      var sheetReps=rows.slice(1).filter(function(r){return r[folioIdx];}).map(function(r){
-        var local=localMap[r[folioIdx]]||{};
+      var sheetReps=rows.slice(1).filter(function(r){return cell(r,folioIdx);}).map(function(r){
+        var local=localMap[cell(r,folioIdx)]||{};
+        var fotoLinks=String(cell(r,fotoLinksIdx)||'').split(/\n+/).filter(Boolean);
         return {
-          folio:r[folioIdx]||'',
-          titulo:r[tituloIdx]||'',
-          autorNombre:r[tecnicoIdx]||'',
-          area:r[areaIdx]||'',
-          turno:r[turnoIdx]||'',
-          fecha:r[fechaIdx]||'',
-          prioridad:r[prioIdx]||'Normal',
-          cumplidas:r[cumpIdx]||'',
-          noCumplidas:r[nocumpIdx]||'',
-          observaciones:r[obsIdx]||'',
-          comentarios:r[comIdx]||'',
-          status:(r[statusIdx]||'pendiente').toLowerCase(),
-          supervisorNombre:r[supIdx]||'',
-          supervisorComentario:r[supComIdx]||'',
-          fechaEnvio:r[fechaEnvioIdx]||'',
-          createdAt:local.createdAt||r[fechaEnvioIdx]||'',
+          folio:cell(r,folioIdx),
+          titulo:cell(r,tituloIdx),
+          autorNombre:cell(r,tecnicoIdx),
+          area:cell(r,areaIdx),
+          turno:cell(r,turnoIdx),
+          fecha:cell(r,fechaIdx),
+          prioridad:cell(r,prioIdx)||'Normal',
+          equipo:cell(r,equipoIdx),
+          tareaCumplida:cell(r,tareaIdx),
+          cumplidas:cell(r,cumpIdx),
+          noCumplidas:cell(r,nocumpIdx),
+          motivoNoCumplida:cell(r,motivoIdx),
+          anomaliasEquipo:cell(r,anomIdx),
+          observaciones:cell(r,obsIdx),
+          comentarios:cell(r,comIdx),
+          imagenes:local.imagenes||fotoLinks.map(function(url){return {dataUrl:driveImageUrl(url),url:url,viewUrl:url,name:'Foto'};}),
+          fotoResumen:cell(r,fotoIdx),
+          status:String(cell(r,statusIdx)||'pendiente').toLowerCase(),
+          supervisorNombre:cell(r,supIdx),
+          supervisorComentario:cell(r,supComIdx),
+          fechaEnvio:cell(r,fechaEnvioIdx),
+          createdAt:local.createdAt||cell(r,fechaEnvioIdx),
           historial:local.historial||[]
         };
       });
       S.reports=sheetReps;
       renderDash();renderPend();renderTodos();
     })
-    .catch(function(e){ console.log('Sheets no disponible, usando datos locales'); });
+    .catch(function(e){ if(!silent) console.log('Sheets no disponible, usando datos locales'); })
+    .finally(function(){S.supLoading=false;});
 }
 
 function renderDash(){
@@ -731,7 +805,7 @@ function repItem(r){
     '<div style="flex:1;min-width:0">'+
       '<div class="rep-folio">'+r.folio+'</div>'+
       '<div class="rep-title">'+esc(r.titulo)+'</div>'+
-      '<div class="rep-meta"><span>👷 '+esc(r.autorNombre)+'</span><span>📁 '+esc(r.area)+'</span><span>🕐 '+esc(r.turno)+'</span><span>📅 '+esc(d)+'</span></div>'+
+      '<div class="rep-meta"><span>👷 '+esc(r.autorNombre)+'</span><span>📁 '+esc(r.area)+'</span><span>⚙️ '+esc(r.equipo||'Sin equipo')+'</span><span>🕐 '+esc(r.turno)+'</span><span>📅 '+esc(d)+'</span></div>'+
     '</div>'+
     '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.28rem;flex-shrink:0">'+sBadge(r.status)+pBadge(r.prioridad)+'</div>'+
   '</div>';
@@ -742,15 +816,14 @@ function openDetalle(folio){
   for(var i=0;i<S.reports.length;i++){if(S.reports[i].folio===folio){r=S.reports[i];break;}}
   if(!r)return;
   document.getElementById('mod-rep-title').textContent=r.folio+' — '+r.titulo;
-  // Mostrar imágenes base64 guardadas con el reporte
   var imgsHtml='';
   if(r.imagenes&&r.imagenes.length){
     var hasObjects=typeof r.imagenes[0]==='object';
     imgsHtml='<div class="det-block"><div class="det-btitle">📷 Evidencia Fotográfica ('+r.imagenes.length+' foto'+(r.imagenes.length>1?'s':'')+')</div>'+
       '<div class="det-imgs">'+
       r.imagenes.map(function(img){
-        var src=hasObjects?(img.dataUrl||img):(typeof img==='string'?img:'');
-        return src?'<img class="det-img" src="'+src+'" onclick="openLbox(\''+src+'\')" loading="lazy"/>':'';
+        var src=driveImageUrl(hasObjects?(img.dataUrl||img.url||img.viewUrl||img):(typeof img==='string'?img:''));
+        return src?'<img class="det-img" src="'+escAttr(src)+'" onclick="openLbox(\''+escAttr(src)+'\')" loading="lazy"/>':'';
       }).join('')+
       '</div></div>';
   }
@@ -770,11 +843,14 @@ function openDetalle(folio){
     dR('Folio',r.folio)+dR('Estado',sBadge(r.status))+
     dR('Área',esc(r.area))+dR('Turno',esc(r.turno||'—'))+
     dR('Fecha',esc(r.fecha||'—'))+dR('Prioridad',pBadge(r.prioridad))+
+    dR('Equipo',esc(r.equipo||'—'))+dR('Tarea cumplida',esc(r.tareaCumplida||'—'))+
     dR('Técnico',esc(r.autorNombre))+dR('Revisado por',esc(r.supervisorNombre||'Pendiente'))+
     (r.supervisorComentario?'<div class="det-row full"><div class="det-lbl">💬 Comentario Supervisor</div><div class="det-val">'+esc(r.supervisorComentario)+'</div></div>':'')+
   '</div>'+
   blk('✅ Actividades Cumplidas',r.cumplidas)+
   (r.noCumplidas?blk('❌ No Cumplidas',r.noCumplidas):'')+
+  (r.motivoNoCumplida?blk('Motivo de no cumplimiento',r.motivoNoCumplida):'')+
+  (r.anomaliasEquipo?blk('Anomalías del Equipo',r.anomaliasEquipo):'')+
   (r.observaciones?blk('⚠️ Observaciones',r.observaciones):'')+
   (r.comentarios?blk('💬 Comentarios',r.comentarios):'')+
   imgsHtml+hist;
@@ -825,26 +901,32 @@ function confirmDec(){
     if(!S.reports[si].historial)S.reports[si].historial=[];
     S.reports[si].historial.push(hist);
   }
-  // 3. Actualizar en Google Sheets
-  var sheetUrl=S.cfg.sheetsUrl||SHEETS_URL;
-  fetch(sheetUrl,{
-    method:'POST',
-    body:JSON.stringify({action:'updateStatus',folio:folio,status:action,supervisor:'Emmanuel',comentario:comment}),
-    mode:'no-cors'
-  }).catch(function(e){console.warn('Sheets update:',e);});
+  // 3. Actualizar en Google Sheets y enviar correo desde Apps Script
+  postToAppsScript({action:'updateStatus',folio:folio,status:action,supervisor:'Emmanuel',comentario:comment})
+    .then(function(res){
+      if(res&&res.email&&res.email.sent===false){
+        toast('⚠️ Estado actualizado, pero correo falló: '+res.email.error,'err');
+      }else{
+        toast(action==='autorizado'
+          ? '✅ Autorizado — correo enviado a soporte y gerencia'
+          : '❌ Rechazado — correo enviado a soporte y gerencia',
+          action==='autorizado'?'ok':'err');
+      }
+      loadSupReports(true);
+    })
+    .catch(function(e){
+      console.warn('Sheets update:',e);
+      toast('⚠️ Se actualizó local, pero Google no confirmó: '+(e.message||e),'err');
+    });
   closeModal('mod-dec'); closeModal('mod-rep');
-  var msg=action==='autorizado'
-    ? '✅ Autorizado — Google enviará correo a soporte y gerencia'
-    : '❌ Rechazado — Google enviará correo a soporte y gerencia';
-  toast(msg, action==='autorizado'?'ok':'err');
   renderDash(); renderPend(); renderTodos();
 }
 
 function exportExcel(){
-  var h=['Folio','Fecha Envío','Técnico','Área','Turno','Fecha Reporte','Prioridad','Título','Actividades Cumplidas','Actividades No Cumplidas','Observaciones','Comentarios','Estado','Supervisor','Comentario Supervisor'];
+  var h=['Folio','Fecha Envío','Técnico','Área','Turno','Fecha Reporte','Prioridad','Título','Equipo','Tarea Cumplida','Actividades Cumplidas','Actividades No Cumplidas','Motivo No Cumplida','Anomalías del Equipo','Observaciones','Comentarios','Estado','Supervisor','Comentario Supervisor'];
   var rows=S.reports.map(function(r){return[
     r.folio, r.fechaEnvio||r.createdAt||'', r.autorNombre, r.area, r.turno, r.fecha,
-    r.prioridad, r.titulo, r.cumplidas||'', r.noCumplidas||'',
+    r.prioridad, r.titulo, r.equipo||'', r.tareaCumplida||'', r.cumplidas||'', r.noCumplidas||'', r.motivoNoCumplida||'', r.anomaliasEquipo||'',
     r.observaciones||'', r.comentarios||'',
     r.status, r.supervisorNombre||'', r.supervisorComentario||''
   ];});
@@ -888,6 +970,12 @@ function removeImg(i){S.imgs.splice(i,1);renderPrev();}
 
 function v(id){return(document.getElementById(id)||{}).value||'';}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return esc(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function driveImageUrl(url){
+  url=String(url||'');
+  var m=url.match(/\/file\/d\/([^/]+)/);
+  return m ? 'https://drive.google.com/uc?export=view&id='+m[1] : url;
+}
 function today(){return new Date().toISOString().split('T')[0];}
 function showScreen(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});document.getElementById('sc-'+id).classList.add('active');}
 function openModal(id){document.getElementById(id).classList.remove('hidden');}
@@ -902,8 +990,8 @@ function supTab(id){
 function sBadge(s){var m={pendiente:['b-pend','⏳ Pendiente'],autorizado:['b-ok','✅ Autorizado'],rechazado:['b-err','❌ Rechazado']};var p=m[s]||m.pendiente;return '<span class="badge '+p[0]+'"><span class="bdot"></span>'+p[1]+'</span>';}
 function pBadge(p){var m={Alta:'b-alta',Crítica:'b-crit',Normal:'b-norm'};return '<span class="badge '+(m[p]||'b-norm')+'">'+(p||'Normal')+'</span>';}
 function limpiarForm(){
-  ['nr-titulo','nr-cumplidas','nr-nocumplidas','nr-obs','nr-comentarios'].forEach(function(id){document.getElementById(id).value='';});
-  document.getElementById('nr-turno').value=''; document.getElementById('nr-prioridad').value='Normal';
+  ['nr-titulo','nr-equipo','nr-cumplidas','nr-nocumplidas','nr-motivo-nocumplida','nr-anomalias','nr-obs','nr-comentarios'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('nr-turno').value=''; document.getElementById('nr-prioridad').value='Normal'; document.getElementById('nr-tarea-cumplida').value='';
   document.getElementById('nr-fecha').value=today(); S.imgs=[]; renderPrev();
 }
 var tT;
