@@ -259,7 +259,10 @@ function callApiPost(payload){
       google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).apiPost(payload);
     });
   }
-  return fetch(SHEETS_URL,{method:'POST',body:JSON.stringify(payload),mode:'no-cors'}).then(function(){return {ok:true,offline:true};});
+  if(payload&&payload.action==='updateStatus'){
+    return jsonpApi({api:'post',payload:JSON.stringify(payload)});
+  }
+  return postViaHiddenForm(payload);
 }
 function callApiGetReports(){
   if(window.google&&google.script&&google.script.run){
@@ -267,7 +270,51 @@ function callApiGetReports(){
       google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).apiGetReports();
     });
   }
-  return Promise.resolve({ok:true,reports:loadLocal()});
+  return jsonpApi({api:'reports'}).catch(function(){return {ok:true,reports:loadLocal()};});
+}
+function jsonpApi(params){
+  return new Promise(function(resolve,reject){
+    var cb='emg_cb_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+    params.callback=cb;
+    var qs=Object.keys(params).map(function(k){return encodeURIComponent(k)+'='+encodeURIComponent(params[k]);}).join('&');
+    var s=document.createElement('script');
+    var timer=setTimeout(function(){cleanup();reject(new Error('Apps Script no respondio'));},15000);
+    function cleanup(){clearTimeout(timer);delete window[cb];if(s.parentNode)s.parentNode.removeChild(s);}
+    window[cb]=function(res){cleanup();resolve(res);};
+    s.onerror=function(){cleanup();reject(new Error('No se pudo contactar Apps Script'));};
+    s.src=SHEETS_URL+(SHEETS_URL.indexOf('?')>=0?'&':'?')+qs;
+    document.body.appendChild(s);
+  });
+}
+function postViaHiddenForm(payload){
+  return new Promise(function(resolve,reject){
+    var iframeName='emg_post_'+Date.now();
+    var iframe=document.createElement('iframe');
+    var form=document.createElement('form');
+    var input=document.createElement('input');
+    var done=false;
+    iframe.name=iframeName;
+    iframe.style.display='none';
+    form.method='POST';
+    form.action=SHEETS_URL;
+    form.target=iframeName;
+    form.style.display='none';
+    input.type='hidden';
+    input.name='payload';
+    input.value=JSON.stringify(payload);
+    form.appendChild(input);
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    var timer=setTimeout(function(){finish(true);},9000);
+    iframe.onload=function(){finish(true);};
+    function finish(ok){
+      if(done)return;
+      done=true;clearTimeout(timer);
+      setTimeout(function(){if(form.parentNode)form.parentNode.removeChild(form);if(iframe.parentNode)iframe.parentNode.removeChild(iframe);},300);
+      ok?resolve({ok:true,submitted:true}):reject(new Error('No se pudo enviar a Apps Script'));
+    }
+    try{form.submit();}catch(err){finish(false);}
+  });
 }
 
 function saveLocal(rep){var reps=loadLocal();reps=reps.filter(function(r){return r.folio!==rep.folio;});reps.unshift(rep);localStorage.setItem('empaques_reps',JSON.stringify(reps));}
