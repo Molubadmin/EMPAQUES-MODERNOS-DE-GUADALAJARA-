@@ -349,6 +349,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
           <select id="nr-turno">
             <option value="">Seleccionar...</option>
             <option>Matutino (6:00–14:00)</option>
+            <option>Diurno (6:00–20:00)</option>
             <option>Vespertino (14:00–22:00)</option>
             <option>Nocturno (22:00–6:00)</option>
           </select>
@@ -376,11 +377,11 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
           <input type="text" id="nr-equipo" placeholder="Ej. Impresora 2, Línea 3, Montacargas 1"/>
         </div>
         <div class="fg"><label>¿Se cumplió la tarea del equipo?</label>
-          <select id="nr-tarea-cumplida">
+          <select id="nr-tarea-cumplida" onchange="toggleTareaCumplidaCampos()">
             <option value="">Seleccionar...</option>
-            <option value="Si">Sí</option>
-            <option value="Parcial">Parcial</option>
-            <option value="No">No</option>
+            <option value="Realizada">Actividad Realizada</option>
+            <option value="No realizada">No Realizada</option>
+            <option value="Anomalias">Anomalías</option>
           </select>
         </div>
       </div>
@@ -390,17 +391,21 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
         <textarea id="nr-cumplidas" placeholder="Detalla cada actividad completada..."></textarea>
       </div>
 
-      <div class="fsec">❌ Actividades No Cumplidas</div>
-      <div class="fg"><label>Actividad del equipo que NO se cumplió</label>
-        <textarea id="nr-nocumplidas" placeholder="Indica qué actividad no se realizó..."></textarea>
-      </div>
-      <div class="fg" style="margin-top:.85rem"><label>Motivo / causa de no cumplimiento</label>
-        <textarea id="nr-motivo-nocumplida" placeholder="Explica por qué no se cumplió la actividad..."></textarea>
+      <div id="sec-nocumplidas" style="display:none">
+        <div class="fsec">❌ Actividades No Cumplidas</div>
+        <div class="fg"><label>Actividad del equipo que NO se cumplió</label>
+          <textarea id="nr-nocumplidas" placeholder="Indica qué actividad no se realizó..."></textarea>
+        </div>
+        <div class="fg" style="margin-top:.85rem"><label>Motivo / causa de no cumplimiento</label>
+          <textarea id="nr-motivo-nocumplida" placeholder="Explica por qué no se cumplió la actividad..."></textarea>
+        </div>
       </div>
 
-      <div class="fsec">🔧 Anomalías del Equipo</div>
-      <div class="fg"><label>Describe las anomalías que presenta el equipo</label>
-        <textarea id="nr-anomalias" placeholder="Ej. Ruido anormal, fuga, vibración, paro intermitente, sensor dañado..."></textarea>
+      <div id="sec-anomalias" style="display:none">
+        <div class="fsec">🔧 Anomalías del Equipo</div>
+        <div class="fg"><label>Describe las anomalías que presenta el equipo</label>
+          <textarea id="nr-anomalias" placeholder="Ej. Ruido anormal, fuga, vibración, paro intermitente, sensor dañado..."></textarea>
+        </div>
       </div>
 
       <div class="fsec">⚠️ Observaciones y Riesgos</div>
@@ -579,7 +584,9 @@ var SUP_PASS = '1234';
 
 window.onload = function () {
   loadCfg();
+  migrateLocalStorage(); // limpia respaldos locales viejos con fotos pesadas (evita QuotaExceededError)
   document.getElementById('nr-fecha').value = today();
+  toggleTareaCumplidaCampos();
   var n = localStorage.getItem('tec_nombre');
   var a = localStorage.getItem('tec_area');
   if (n && n.trim()) {
@@ -693,12 +700,67 @@ function enviarReporte() {
     });
 }
 
+// Guarda un respaldo local del reporte. IMPORTANTE: nunca guardamos las
+// fotos completas (base64) en localStorage — eso es lo que llenaba la
+// cuota del navegador (~5-10MB) y hacía tronar el envío ANTES de que
+// llegara a contactar al servidor. Las fotos reales ya se suben a
+// Google Drive vía el fetch(); este respaldo local es solo para poder
+// mostrar la lista de reportes sin conexión, así que basta con guardar
+// el nombre de cada foto, no su contenido.
 function saveLocal(rep) {
-  var reps = JSON.parse(localStorage.getItem('empaques_reps') || '[]');
-  reps.unshift(rep);
-  localStorage.setItem('empaques_reps', JSON.stringify(reps));
+  try {
+    var liteRep = Object.assign({}, rep, {
+      imagenes: (rep.imagenes || []).map(function (img) { return { name: img && img.name }; })
+    });
+    var reps = JSON.parse(localStorage.getItem('empaques_reps') || '[]');
+    reps.unshift(liteRep);
+    if (reps.length > 40) reps = reps.slice(0, 40); // límite de respaldos locales
+    localStorage.setItem('empaques_reps', JSON.stringify(reps));
+  } catch (err) {
+    // Si aun así falla (navegador con cuota muy reducida, modo incógnito,
+    // etc.) NO dejamos que esto rompa el envío del reporte al servidor.
+    console.warn('No se pudo guardar el respaldo local (el envío al servidor continúa normalmente):', err);
+    pruneLocalStorage();
+  }
 }
-function loadLocal() { return JSON.parse(localStorage.getItem('empaques_reps') || '[]'); }
+function loadLocal() {
+  try {
+    return JSON.parse(localStorage.getItem('empaques_reps') || '[]');
+  } catch (err) {
+    console.warn('Respaldo local corrupto, se reinicia:', err);
+    pruneLocalStorage();
+    return [];
+  }
+}
+
+// Vacía el respaldo local. Es seguro hacerlo: los reportes reales viven
+// en Google Sheets/Drive, este storage del navegador es solo caché.
+function pruneLocalStorage() {
+  try { localStorage.removeItem('empaques_reps'); } catch (e) {}
+}
+
+// Se ejecuta una vez al cargar la página: si hay reportes viejos
+// guardados ANTES de este arreglo (con fotos completas en base64),
+// los "aligera" quitándoles las fotos para liberar espacio de inmediato,
+// sin que el técnico tenga que hacer nada ni perder sus reportes.
+function migrateLocalStorage() {
+  try {
+    var raw = localStorage.getItem('empaques_reps');
+    if (!raw) return;
+    var reps = JSON.parse(raw);
+    var changed = false;
+    reps.forEach(function (r) {
+      if (r && r.imagenes && r.imagenes.some(function (i) { return i && i.dataUrl; })) {
+        r.imagenes = r.imagenes.map(function (i) { return { name: i && i.name }; });
+        changed = true;
+      }
+    });
+    if (changed) localStorage.setItem('empaques_reps', JSON.stringify(reps));
+  } catch (err) {
+    console.warn('No se pudo migrar el respaldo local, se reinicia:', err);
+    pruneLocalStorage();
+  }
+}
 
 /* ---------------------------------------------------------------------
    LOGIN SUPERVISOR
@@ -1104,6 +1166,18 @@ function limpiarForm() {
   ['nr-titulo', 'nr-equipo', 'nr-cumplidas', 'nr-nocumplidas', 'nr-motivo-nocumplida', 'nr-anomalias', 'nr-obs', 'nr-comentarios'].forEach(function (id) { document.getElementById(id).value = ''; });
   document.getElementById('nr-turno').value = ''; document.getElementById('nr-prioridad').value = 'Normal'; document.getElementById('nr-tarea-cumplida').value = '';
   document.getElementById('nr-fecha').value = today(); S.imgs = []; renderPrev();
+  toggleTareaCumplidaCampos();
+}
+
+// Muestra solo la sección relevante según lo que el técnico seleccionó en
+// "¿Se cumplió la tarea del equipo?" — así no tiene que llenar todas las
+// secciones (No Cumplidas / Anomalías) sin importar cuál eligió.
+function toggleTareaCumplidaCampos() {
+  var val = v('nr-tarea-cumplida');
+  var secNo = document.getElementById('sec-nocumplidas');
+  var secAnom = document.getElementById('sec-anomalias');
+  secNo.style.display = (val === 'No realizada') ? '' : 'none';
+  secAnom.style.display = (val === 'Anomalias') ? '' : 'none';
 }
 var tT;
 function toast(msg, type) {
