@@ -337,6 +337,9 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 
       <div class="fsec">📌 Información General</div>
       <div class="frow">
+        <div class="fg"><label>Folio de Orden de Lubricación</label>
+          <input type="text" id="nr-folio" placeholder="Ej. OL-12345"/>
+        </div>
         <div class="fg"><label>Área</label>
           <select id="nr-area">
             <option value="">Seleccionar...</option>
@@ -345,18 +348,21 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
             <option>Seguridad</option><option>Otro</option>
           </select>
         </div>
+      </div>
+      <div class="frow">
         <div class="fg"><label>Turno</label>
           <select id="nr-turno">
             <option value="">Seleccionar...</option>
-            <option>Matutino (6:00–14:00)</option>
-            <option>Diurno (6:00–20:00)</option>
-            <option>Vespertino (14:00–22:00)</option>
-            <option>Nocturno (22:00–6:00)</option>
+            <option>Matutino</option>
+            <option>Vespertino</option>
+            <option>Nocturno</option>
+            <option>Mixto</option>
+            <option>Cubre descansos</option>
           </select>
         </div>
+        <div class="fg"><label>Fecha del Reporte</label><input type="date" id="nr-fecha"/></div>
       </div>
       <div class="frow">
-        <div class="fg"><label>Fecha del Reporte</label><input type="date" id="nr-fecha"/></div>
         <div class="fg"><label>Prioridad</label>
           <select id="nr-prioridad">
             <option value="Normal">Normal</option>
@@ -634,16 +640,15 @@ function cambiarNombre() {
 function enviarReporte() {
   if (!S.tecNombre) { document.getElementById('name-ov').classList.remove('hidden'); return; }
 
-  var titulo = v('nr-titulo'), area = v('nr-area'), turno = v('nr-turno'),
+  var folio = v('nr-folio'), titulo = v('nr-titulo'), area = v('nr-area'), turno = v('nr-turno'),
       fecha = v('nr-fecha'), cumplidas = v('nr-cumplidas');
   var equipo = v('nr-equipo'), tareaCumplida = v('nr-tarea-cumplida');
 
-  if (!titulo || !area || !turno || !equipo || !tareaCumplida || !cumplidas) {
-    toast('Completa: área, turno, equipo, tarea cumplida, título y actividades cumplidas', 'err');
+  if (!folio || !titulo || !area || !turno || !equipo || !tareaCumplida || !cumplidas) {
+    toast('Completa: folio, área, turno, equipo, tarea cumplida, título y actividades cumplidas', 'err');
     return;
   }
 
-  var folio = 'RPT-' + Date.now().toString().slice(-6);
   var imagenesBase64 = S.imgs.map(function (img) { return { name: img.name, dataUrl: img.dataUrl }; });
 
   var rep = {
@@ -1163,7 +1168,7 @@ function sBadge(s) {
 }
 function pBadge(p) { var m = { Alta: 'b-alta', Crítica: 'b-crit', Normal: 'b-norm' }; return '<span class="badge ' + (m[p] || 'b-norm') + '">' + (p || 'Normal') + '</span>'; }
 function limpiarForm() {
-  ['nr-titulo', 'nr-equipo', 'nr-cumplidas', 'nr-nocumplidas', 'nr-motivo-nocumplida', 'nr-anomalias', 'nr-obs', 'nr-comentarios'].forEach(function (id) { document.getElementById(id).value = ''; });
+  ['nr-folio', 'nr-titulo', 'nr-equipo', 'nr-cumplidas', 'nr-nocumplidas', 'nr-motivo-nocumplida', 'nr-anomalias', 'nr-obs', 'nr-comentarios'].forEach(function (id) { document.getElementById(id).value = ''; });
   document.getElementById('nr-turno').value = ''; document.getElementById('nr-prioridad').value = 'Normal'; document.getElementById('nr-tarea-cumplida').value = '';
   document.getElementById('nr-fecha').value = today(); S.imgs = []; renderPrev();
   toggleTareaCumplidaCampos();
