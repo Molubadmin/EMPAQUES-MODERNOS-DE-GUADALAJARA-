@@ -820,14 +820,15 @@ function loadSupReports() {
       var linksIdx = idx('Links Fotografias') >= 0 ? idx('Links Fotografias') : idx('Links Fotografías');
 
       var localMap = {};
-      S.reports.forEach(function (r) { localMap[r.folio] = r; });
+      S.reports.forEach(function (r) { localMap[String(r.folio || '')] = r; });
 
       var sheetReps = rows.slice(1).filter(function (r) { return r[folioIdx]; }).map(function (r) {
-        var local = localMap[r[folioIdx]] || {};
+        var folio = String(r[folioIdx] || '').trim();
+        var local = localMap[folio] || {};
         var linksRaw = linksIdx >= 0 ? (r[linksIdx] || '') : '';
         var fotoLinks = String(linksRaw).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
         return {
-          folio: r[folioIdx] || '',
+          folio: folio,
           titulo: tituloIdx >= 0 ? (r[tituloIdx] || '') : '',
           autorNombre: tecnicoIdx >= 0 ? (r[tecnicoIdx] || '') : '',
           area: areaIdx >= 0 ? (r[areaIdx] || '') : '',
@@ -908,9 +909,11 @@ function renderTodos() {
 function repItem(r) {
   var d = r.fecha || r.createdAt || '—';
   var hl = r.status === 'pendiente' ? 'pend' : (r.status === 'autorizado' ? 'ok' : 'err');
-  return '<div class="rep-item ' + hl + '" onclick="openDetalle(\'' + r.folio + '\')">' +
+  var folio = String(r.folio || '');
+  var folioArg = folio.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return '<div class="rep-item ' + hl + '" onclick="openDetalle(\'' + folioArg + '\')">' +
     '<div style="flex:1;min-width:0">' +
-      '<div class="rep-folio">' + r.folio + '</div>' +
+      '<div class="rep-folio">' + esc(folio) + '</div>' +
       '<div class="rep-title">' + esc(r.titulo) + '</div>' +
       '<div class="rep-meta"><span>👷 ' + esc(r.autorNombre) + '</span><span>📁 ' + esc(r.area) + '</span><span>⚙️ ' + esc(r.equipo || 'Sin equipo') + '</span><span>🕐 ' + esc(r.turno) + '</span><span>📅 ' + esc(d) + '</span></div>' +
     '</div>' +
@@ -936,7 +939,8 @@ function openLboxByIndex(i) {
 
 function openDetalle(folio) {
   var r = null;
-  for (var i = 0; i < S.reports.length; i++) { if (S.reports[i].folio === folio) { r = S.reports[i]; break; } }
+  folio = String(folio || '');
+  for (var i = 0; i < S.reports.length; i++) { if (String(S.reports[i].folio || '') === folio) { r = S.reports[i]; break; } }
   if (!r) return;
   document.getElementById('mod-rep-title').textContent = r.folio + ' — ' + r.titulo;
 
