@@ -499,11 +499,12 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
         <span style="font-size:.93rem;font-weight:700;color:var(--pri)">🗂️ Todos los Reportes</span>
         <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap">
           <select class="fsel" id="report-period">
+            <option value="todo">Todo</option>
             <option value="semanal">Semanal</option>
             <option value="quincenal">Quincenal</option>
             <option value="mensual">Mensual</option>
           </select>
-          <button class="btn btn-ghost btn-sm" onclick="exportExcel(v('report-period'))">⬇️ Descargar informe</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportPdfInforme(v('report-period'))">⬇️ Descargar informe PDF</button>
         </div>
       </div>
       <div class="filters">
@@ -1083,6 +1084,105 @@ function confirmDec() {
       toast('⚠️ Cambios guardados localmente, pero sin conexión al servidor', 'err');
       console.warn('Error de red al actualizar estado:', err);
     });
+}
+
+/* ---------------------------------------------------------------------
+   INFORME PDF
+--------------------------------------------------------------------- */
+function exportPdfInforme(periodo) {
+  var selected = ['todo', 'semanal', 'quincenal', 'mensual'].indexOf(periodo) >= 0 ? periodo : 'todo';
+  var reportes = getReportsByPeriod(selected);
+  if (!reportes.length) {
+    toast('No hay reportes para generar el informe seleccionado', 'err');
+    return;
+  }
+
+  var win = window.open('', '_blank');
+  if (!win) {
+    toast('Permite ventanas emergentes para generar el PDF', 'err');
+    return;
+  }
+
+  win.document.open();
+  win.document.write(buildInformeHtml(reportes, selected));
+  win.document.close();
+  toast('Preparando informe PDF...', 'acc');
+  setTimeout(function () {
+    win.focus();
+    win.print();
+  }, 450);
+}
+
+function getReportsByPeriod(periodo) {
+  if (periodo === 'todo') return S.reports.slice();
+  var days = { semanal: 7, quincenal: 15, mensual: 30 };
+  var from = new Date();
+  from.setHours(0, 0, 0, 0);
+  from.setDate(from.getDate() - days[periodo] + 1);
+  return S.reports.filter(function (r) {
+    var d = parseReportDate(r.fecha || r.fechaEnvio || r.createdAt);
+    return d && d >= from;
+  });
+}
+
+function buildInformeHtml(reportes, periodo) {
+  var periodoLabel = { todo: 'Todo el historial', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[periodo] || 'Todo el historial';
+  var now = new Date();
+  var total = reportes.length;
+  var pendientes = reportes.filter(function (r) { return r.status === 'pendiente'; }).length;
+  var autorizados = reportes.filter(function (r) { return r.status === 'autorizado'; }).length;
+  var rechazados = reportes.filter(function (r) { return r.status === 'rechazado'; }).length;
+  var areas = {};
+  reportes.forEach(function (r) { areas[r.area || 'Sin area'] = (areas[r.area || 'Sin area'] || 0) + 1; });
+
+  var areaRows = Object.keys(areas).sort().map(function (area) {
+    return '<tr><td>' + esc(area) + '</td><td>' + areas[area] + '</td></tr>';
+  }).join('');
+
+  var rows = reportes.map(function (r) {
+    return '<tr>' +
+      '<td>' + esc(r.folio) + '</td>' +
+      '<td>' + esc(formatReportDate(r.fecha || r.fechaEnvio || r.createdAt)) + '</td>' +
+      '<td>' + esc(r.autorNombre || r.tecnico) + '</td>' +
+      '<td>' + esc(r.area) + '</td>' +
+      '<td>' + esc(r.equipo || '-') + '</td>' +
+      '<td>' + esc(r.titulo || '-') + '</td>' +
+      '<td><span class="status ' + esc(r.status || 'pendiente') + '">' + esc(statusText(r.status)) + '</span></td>' +
+      '<td>' + esc(r.supervisorNombre || 'Pendiente') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Informe de Reportes</title>' +
+    '<style>' +
+    '@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;color:#1E293B;margin:0;background:#fff;font-size:11px}' +
+    '.head{border-bottom:3px solid #0D2557;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;gap:18px;align-items:flex-start}' +
+    '.brand{font-size:18px;font-weight:800;color:#0D2557;letter-spacing:.02em}.sub{font-size:10px;color:#475569;margin-top:3px;text-transform:uppercase;font-weight:700}' +
+    '.meta{text-align:right;color:#475569;line-height:1.55}.title{font-size:22px;font-weight:800;color:#0D2557;margin:0 0 4px}.period{font-size:12px;color:#00AEEF;font-weight:800;text-transform:uppercase}' +
+    '.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 16px}.card{border:1px solid #E2E8F0;border-left:4px solid #0D2557;padding:9px 10px;border-radius:6px;background:#F8FAFC}.card b{font-size:20px;color:#0D2557;display:block}.card span{font-size:9px;color:#475569;text-transform:uppercase;font-weight:800}' +
+    '.ok{border-left-color:#16A34A}.pend{border-left-color:#1D4ED8}.err{border-left-color:#DC2626}.grid{display:grid;grid-template-columns:1fr 1.3fr;gap:12px;margin-bottom:16px}' +
+    'h2{font-size:12px;color:#0D2557;margin:0 0 7px;text-transform:uppercase;letter-spacing:.04em}.box{border:1px solid #E2E8F0;border-radius:6px;padding:10px;background:#fff}' +
+    'table{width:100%;border-collapse:collapse}th{background:#0D2557;color:#fff;text-align:left;font-size:9px;text-transform:uppercase;padding:7px 6px}td{border-bottom:1px solid #E2E8F0;padding:7px 6px;vertical-align:top}tr:nth-child(even) td{background:#F8FAFC}' +
+    '.status{display:inline-block;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:800;text-transform:uppercase}.status.pendiente{background:#EFF6FF;color:#1D4ED8}.status.autorizado{background:#F0FDF4;color:#15803D}.status.rechazado{background:#FEF2F2;color:#B91C1C}' +
+    '.foot{margin-top:16px;border-top:1px solid #E2E8F0;padding-top:8px;color:#64748B;font-size:9px;display:flex;justify-content:space-between}' +
+    '@media print{button{display:none}.box,.card{break-inside:avoid}tr{break-inside:avoid}}' +
+    '</style></head><body>' +
+    '<div class="head"><div><div class="brand">Empaques Modernos de Guadalajara</div><div class="sub">Sistema de reportes operativos</div></div><div class="meta">Generado: ' + esc(now.toLocaleString('es-MX')) + '<br>Usuario: ' + esc(S.supName || 'Supervisor') + '</div></div>' +
+    '<h1 class="title">Informe de Reportes</h1><div class="period">' + esc(periodoLabel) + '</div>' +
+    '<div class="summary"><div class="card"><b>' + total + '</b><span>Total reportes</span></div><div class="card pend"><b>' + pendientes + '</b><span>Pendientes</span></div><div class="card ok"><b>' + autorizados + '</b><span>Autorizados</span></div><div class="card err"><b>' + rechazados + '</b><span>Rechazados</span></div></div>' +
+    '<div class="grid"><div class="box"><h2>Reportes por area</h2><table><thead><tr><th>Area</th><th>Total</th></tr></thead><tbody>' + areaRows + '</tbody></table></div><div class="box"><h2>Resumen</h2><p>Este documento concentra los reportes capturados en el periodo seleccionado, incluyendo estado de revision, tecnico, area, equipo atendido y supervisor responsable.</p></div></div>' +
+    '<div class="box"><h2>Detalle de reportes</h2><table><thead><tr><th>Folio</th><th>Fecha</th><th>Tecnico</th><th>Area</th><th>Equipo</th><th>Titulo</th><th>Estado</th><th>Supervisor</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="foot"><span>Empaques Modernos de Guadalajara</span><span>Informe ' + esc(periodoLabel) + '</span></div>' +
+    '</body></html>';
+}
+
+function statusText(status) {
+  var m = { pendiente: 'Pendiente', autorizado: 'Autorizado', rechazado: 'Rechazado' };
+  return m[status] || 'Pendiente';
+}
+
+function formatReportDate(value) {
+  var d = parseReportDate(value);
+  return d ? d.toLocaleDateString('es-MX') : (value || '-');
 }
 
 /* ---------------------------------------------------------------------
