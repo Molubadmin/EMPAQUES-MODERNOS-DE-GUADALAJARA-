@@ -448,7 +448,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
     <h2>Acceso Supervisor</h2>
     <div class="fg" style="margin-bottom:.85rem">
       <label>Usuario</label>
-      <input type="text" id="lg-user" placeholder="emmanuel" autocomplete="username"/>
+      <input type="text" id="lg-user" placeholder="emmanuel o susana" autocomplete="username"/>
     </div>
     <div class="fg" style="margin-bottom:1.1rem">
       <label>Contraseña</label>
@@ -466,8 +466,8 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
     <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NjAgMTAwIj4KICA8ZyBmaWxsPSJub25lIiBzdHJva2U9IiMwRDI1NTciIHN0cm9rZS13aWR0aD0iNiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggMTYgTDk4IDM0IEw5OCA3MCBMNTggODggTDE4IDcwIFoiLz4KICAgIDxwYXRoIGQ9Ik0xOCAzNCBMNTggNTIgTDk4IDM0Ii8+CiAgICA8bGluZSB4MT0iNTgiIHkxPSI1MiIgeDI9IjU4IiB5Mj0iODgiLz4KICA8L2c+CiAgPHRleHQgeD0iMTE4IiB5PSI1MiIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzNCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzBEMjU1NyI+RW1wYXF1ZXMgTW9kZXJub3M8L3RleHQ+CiAgPHRleHQgeD0iMTE4IiB5PSI3OCIgZm9udC1mYW1pbHk9IlNlZ29lIFVJLCBBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iIzAwQUVFRiIgbGV0dGVyLXNwYWNpbmc9IjEuNSI+R1VBREFMQUpBUkEgwrcgU01VUkZJVCBXRVNUUk9DSzwvdGV4dD4KPC9zdmc+Cg==" alt="Empaques Modernos"/>
     <div class="tbr">
       <div class="chip">
-        <div class="chip-av" style="background:#F59E0B">E</div>
-        <span>Emmanuel</span>
+        <div class="chip-av" id="sup-av" style="background:#F59E0B">E</div>
+        <span id="sup-name-lbl">Emmanuel</span>
         <span class="chip-role" style="background:#F59E0B">Supervisor</span>
       </div>
       <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.28)" onclick="doLogout()">Salir</button>
@@ -497,7 +497,14 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
     <div id="spanel-todos" class="tab-panel">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.45rem">
         <span style="font-size:.93rem;font-weight:700;color:var(--pri)">🗂️ Todos los Reportes</span>
-        <button class="btn btn-ghost btn-sm" onclick="exportExcel()">⬇️ Descargar Excel</button>
+        <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap">
+          <select class="fsel" id="report-period">
+            <option value="semanal">Semanal</option>
+            <option value="quincenal">Quincenal</option>
+            <option value="mensual">Mensual</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="exportExcel(v('report-period'))">⬇️ Descargar informe</button>
+        </div>
       </div>
       <div class="filters">
         <input class="fsearch" placeholder="🔍 Buscar técnico, área, folio..." id="f-search" oninput="renderTodos()"/>
@@ -574,7 +581,8 @@ var S = {
   reports: [],
   decRid: null,
   decAction: null,
-  supIn: false
+  supIn: false,
+  supName: ''
 };
 
 var lastImgUrls = [];
@@ -585,8 +593,10 @@ var lastImgUrls = [];
 // lápiz > Nueva versión > Implementar), la URL se mantiene igual.
 var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyvqanymWq603MB3ZiN6icfD62CqSuwYmMLKiAHVG77iZxjFkmcp5UwcMxR7_YkxkY/exec';
 
-var SUP_USER = 'emmanuel';
-var SUP_PASS = '1234';
+var SUP_USERS = {
+  emmanuel: { pass: '1234', name: 'Emmanuel', initial: 'E' },
+  susana: { pass: '1234', name: 'Susana Rosas Valle', initial: 'S' }
+};
 
 window.onload = function () {
   loadCfg();
@@ -771,17 +781,20 @@ function migrateLocalStorage() {
    LOGIN SUPERVISOR
 --------------------------------------------------------------------- */
 function doLogin() {
-  var user = v('lg-user'), pass = v('lg-pass');
+  var user = v('lg-user').toLowerCase().trim(), pass = v('lg-pass');
   if (!user || !pass) { toast('Ingresa usuario y contraseña', 'err'); return; }
-  if (user === SUP_USER && pass === SUP_PASS) {
+  if (SUP_USERS[user] && pass === SUP_USERS[user].pass) {
     S.supIn = true;
+    S.supName = SUP_USERS[user].name;
+    document.getElementById('sup-name-lbl').textContent = S.supName;
+    document.getElementById('sup-av').textContent = SUP_USERS[user].initial;
     showScreen('supervisor');
     loadSupReports();
   } else {
     toast('❌ Usuario o contraseña incorrectos', 'err');
   }
 }
-function doLogout() { S.supIn = false; showScreen('tecnico'); }
+function doLogout() { S.supIn = false; S.supName = ''; showScreen('tecnico'); }
 
 /* ---------------------------------------------------------------------
    CARGA DE REPORTES (local + Google Sheets)
@@ -1019,14 +1032,15 @@ function openDec(folio, action) {
 
 function confirmDec() {
   var folio = S.decRid, action = S.decAction, comment = v('dec-comment');
-  var hist = { accion: action, por: 'Emmanuel', fecha: new Date().toISOString(), comentario: comment };
+  var supervisorNombre = S.supName || 'Emmanuel';
+  var hist = { accion: action, por: supervisorNombre, fecha: new Date().toISOString(), comentario: comment };
 
   // Actualiza almacenamiento local
   var reps = loadLocal();
   var idx = reps.findIndex(function (r) { return r.folio === folio; });
   if (idx > -1) {
     reps[idx].status = action;
-    reps[idx].supervisorNombre = 'Emmanuel';
+    reps[idx].supervisorNombre = supervisorNombre;
     reps[idx].supervisorComentario = comment;
     reps[idx].fechaRevision = new Date().toLocaleString('es-MX');
     if (!reps[idx].historial) reps[idx].historial = [];
@@ -1037,7 +1051,7 @@ function confirmDec() {
   var si = S.reports.findIndex(function (r) { return r.folio === folio; });
   if (si > -1) {
     S.reports[si].status = action;
-    S.reports[si].supervisorNombre = 'Emmanuel';
+    S.reports[si].supervisorNombre = supervisorNombre;
     S.reports[si].supervisorComentario = comment;
     if (!S.reports[si].historial) S.reports[si].historial = [];
     S.reports[si].historial.push(hist);
@@ -1050,7 +1064,7 @@ function confirmDec() {
   var sheetUrl = S.cfg.sheetsUrl || SHEETS_URL;
   fetch(sheetUrl, {
     method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', folio: folio, status: action, supervisor: 'Emmanuel', comentario: comment })
+    body: JSON.stringify({ action: 'updateStatus', folio: folio, status: action, supervisor: supervisorNombre, comentario: comment })
   })
     .then(function (r) { return r.json(); })
     .then(function (res) {
@@ -1074,9 +1088,20 @@ function confirmDec() {
 /* ---------------------------------------------------------------------
    EXPORTAR EXCEL (CSV)
 --------------------------------------------------------------------- */
-function exportExcel() {
+function exportExcel(periodo) {
+  var labels = { semanal: 'semanal', quincenal: 'quincenal', mensual: 'mensual' };
+  var days = { semanal: 7, quincenal: 15, mensual: 30 };
+  var selected = labels[periodo] ? periodo : 'mensual';
+  var from = new Date();
+  from.setHours(0, 0, 0, 0);
+  from.setDate(from.getDate() - days[selected] + 1);
+
   var h = ['Folio', 'Fecha Envío', 'Técnico', 'Área', 'Turno', 'Fecha Reporte', 'Prioridad', 'Título', 'Equipo', 'Tarea Cumplida', 'Actividades Cumplidas', 'Actividades No Cumplidas', 'Observaciones', 'Comentarios', 'Estado', 'Supervisor', 'Comentario Supervisor'];
-  var rows = S.reports.map(function (r) {
+  var reportes = S.reports.filter(function (r) {
+    var d = parseReportDate(r.fecha || r.fechaEnvio || r.createdAt);
+    return d && d >= from;
+  });
+  var rows = reportes.map(function (r) {
     return [
       r.folio, r.fechaEnvio || r.createdAt || '', r.autorNombre, r.area, r.turno, r.fecha,
       r.prioridad, r.titulo, r.equipo || '', r.tareaCumplida || '', r.cumplidas || '', r.noCumplidas || '',
@@ -1087,9 +1112,21 @@ function exportExcel() {
   var csv = [h].concat(rows).map(function (r) { return r.map(function (c) { return '"' + String(c || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
   var a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(csv);
-  a.download = 'reportes_empaques_' + today() + '.csv';
+  a.download = 'informe_' + labels[selected] + '_empaques_' + today() + '.csv';
   a.click();
-  toast('⬇️ Descargando Excel...', 'acc');
+  toast('⬇️ Descargando informe ' + labels[selected] + '...', 'acc');
+}
+
+function parseReportDate(value) {
+  if (!value) return null;
+  var d = value instanceof Date ? value : new Date(value);
+  if (!isNaN(d.getTime())) return d;
+  var m = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) {
+    d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
 }
 
 /* ---------------------------------------------------------------------
