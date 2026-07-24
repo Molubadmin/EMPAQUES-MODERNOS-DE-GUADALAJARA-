@@ -581,6 +581,7 @@ var S = {
   imgs: [],
   reports: [],
   decRid: null,
+  decKey: null,
   decAction: null,
   supIn: false,
   supName: ''
@@ -836,12 +837,17 @@ function loadSupReports() {
       var localMap = {};
       S.reports.forEach(function (r) { localMap[String(r.folio || '')] = r; });
 
-      var sheetReps = rows.slice(1).filter(function (r) { return r[folioIdx]; }).map(function (r) {
+      var sheetReps = rows.slice(1).map(function (r, rowIndex) {
+        return { row: r, rowNumber: rowIndex + 2 };
+      }).filter(function (item) { return item.row[folioIdx]; }).map(function (item) {
+        var r = item.row;
         var folio = String(r[folioIdx] || '').trim();
         var local = localMap[folio] || {};
         var linksRaw = linksIdx >= 0 ? (r[linksIdx] || '') : '';
         var fotoLinks = String(linksRaw).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
         return {
+          _key: 'sheet-' + item.rowNumber,
+          _rowNumber: item.rowNumber,
           folio: folio,
           titulo: tituloIdx >= 0 ? (r[tituloIdx] || '') : '',
           autorNombre: tecnicoIdx >= 0 ? (r[tecnicoIdx] || '') : '',
@@ -920,12 +926,24 @@ function renderTodos() {
   el.innerHTML = list.map(repItem).join('');
 }
 
+function reportKey(r) {
+  return String(r._key || ('local-' + (r.createdAt || '') + '-' + (r.folio || '') + '-' + (r.titulo || '')));
+}
+
+function findReportByKey(key) {
+  key = String(key || '');
+  for (var i = 0; i < S.reports.length; i++) {
+    if (reportKey(S.reports[i]) === key) return S.reports[i];
+  }
+  return null;
+}
+
 function repItem(r) {
   var d = r.fecha || r.createdAt || '—';
   var hl = r.status === 'pendiente' ? 'pend' : (r.status === 'autorizado' ? 'ok' : 'err');
   var folio = String(r.folio || '');
-  var folioArg = folio.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-  return '<div class="rep-item ' + hl + '" onclick="openDetalle(\'' + folioArg + '\')">' +
+  var keyArg = reportKey(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  return '<div class="rep-item ' + hl + '" onclick="openDetalle(\'' + keyArg + '\')">' +
     '<div style="flex:1;min-width:0">' +
       '<div class="rep-folio">' + esc(folio) + '</div>' +
       '<div class="rep-title">' + esc(r.titulo) + '</div>' +
@@ -951,10 +969,8 @@ function openLboxByIndex(i) {
   if (u) openLbox(u);
 }
 
-function openDetalle(folio) {
-  var r = null;
-  folio = String(folio || '');
-  for (var i = 0; i < S.reports.length; i++) { if (String(S.reports[i].folio || '') === folio) { r = S.reports[i]; break; } }
+function openDetalle(key) {
+  var r = findReportByKey(key);
   if (!r) return;
   document.getElementById('mod-rep-title').textContent = r.folio + ' — ' + r.titulo;
 
@@ -1011,15 +1027,17 @@ function openDetalle(folio) {
   var canDec = S.supIn && r.status === 'pendiente';
   document.getElementById('mod-rep-footer').innerHTML =
     '<button class="btn btn-ghost" onclick="closeModal(\'mod-rep\')">Cerrar</button>' +
-    (canDec ? '<button class="btn btn-err" onclick="openDec(\'' + r.folio + '\',\'rechazado\')">❌ Rechazar</button><button class="btn btn-ok" onclick="openDec(\'' + r.folio + '\',\'autorizado\')">✅ Autorizar</button>' : '');
+    (canDec ? '<button class="btn btn-err" onclick="openDec(\'' + String(key).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\',\'rechazado\')">❌ Rechazar</button><button class="btn btn-ok" onclick="openDec(\'' + String(key).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\',\'autorizado\')">✅ Autorizar</button>' : '');
   openModal('mod-rep');
 }
 function dR(l, val) { return '<div class="det-row"><div class="det-lbl">' + l + '</div><div class="det-val">' + val + '</div></div>'; }
 function blk(t, text) { return '<div class="det-block"><div class="det-btitle">' + t + '</div><p>' + esc(text || '—') + '</p></div>'; }
 
-function openDec(folio, action) {
-  S.decRid = folio; S.decAction = action;
-  var r = null; for (var i = 0; i < S.reports.length; i++) { if (S.reports[i].folio === folio) { r = S.reports[i]; break; } }
+function openDec(key, action) {
+  var r = findReportByKey(key);
+  S.decKey = key;
+  S.decRid = r ? r.folio : '';
+  S.decAction = action;
   var isOk = action === 'autorizado';
   document.getElementById('mod-dec-h').className = 'mh ' + (isOk ? 'ok' : 'err');
   document.getElementById('mod-dec-title').textContent = isOk ? '✅ Autorizar Reporte' : '❌ Rechazar Reporte';
@@ -1032,13 +1050,17 @@ function openDec(folio, action) {
 }
 
 function confirmDec() {
-  var folio = S.decRid, action = S.decAction, comment = v('dec-comment');
+  var key = S.decKey;
+  var reporteActual = findReportByKey(key);
+  var folio = reporteActual ? reporteActual.folio : S.decRid;
+  var rowNumber = reporteActual ? reporteActual._rowNumber : null;
+  var action = S.decAction, comment = v('dec-comment');
   var supervisorNombre = S.supName || 'Emmanuel';
   var hist = { accion: action, por: supervisorNombre, fecha: new Date().toISOString(), comentario: comment };
 
   // Actualiza almacenamiento local
   var reps = loadLocal();
-  var idx = reps.findIndex(function (r) { return r.folio === folio; });
+  var idx = reps.findIndex(function (r) { return reportKey(r) === key || (r.folio === folio && !rowNumber); });
   if (idx > -1) {
     reps[idx].status = action;
     reps[idx].supervisorNombre = supervisorNombre;
@@ -1049,7 +1071,7 @@ function confirmDec() {
     localStorage.setItem('empaques_reps', JSON.stringify(reps));
   }
   // Actualiza en memoria
-  var si = S.reports.findIndex(function (r) { return r.folio === folio; });
+  var si = S.reports.findIndex(function (r) { return reportKey(r) === key; });
   if (si > -1) {
     S.reports[si].status = action;
     S.reports[si].supervisorNombre = supervisorNombre;
@@ -1065,7 +1087,7 @@ function confirmDec() {
   var sheetUrl = S.cfg.sheetsUrl || SHEETS_URL;
   fetch(sheetUrl, {
     method: 'POST',
-    body: JSON.stringify({ action: 'updateStatus', folio: folio, status: action, supervisor: supervisorNombre, comentario: comment })
+    body: JSON.stringify({ action: 'updateStatus', rowNumber: rowNumber, folio: folio, status: action, supervisor: supervisorNombre, comentario: comment })
   })
     .then(function (r) { return r.json(); })
     .then(function (res) {
