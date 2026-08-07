@@ -498,13 +498,12 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.45rem">
         <span style="font-size:.93rem;font-weight:700;color:var(--pri)">🗂️ Todos los Reportes</span>
         <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap">
-          <select class="fsel" id="report-period">
-            <option value="todo">Todo</option>
-            <option value="semanal">Semanal</option>
-            <option value="quincenal">Quincenal</option>
-            <option value="mensual">Mensual</option>
-          </select>
-          <button class="btn btn-ghost btn-sm" onclick="exportPdfInforme(v('report-period'))">⬇️ Descargar informe PDF</button>
+          <label style="font-size:.75rem;color:var(--g600);font-weight:600" for="report-from">Del</label>
+          <input type="date" class="fsel" id="report-from" style="cursor:pointer"/>
+          <label style="font-size:.75rem;color:var(--g600);font-weight:600" for="report-to">Al</label>
+          <input type="date" class="fsel" id="report-to" style="cursor:pointer"/>
+          <button class="btn btn-ghost btn-sm" id="report-range-clear" onclick="clearReportRange()" title="Quitar filtro de fechas">✕</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportPdfInforme()">⬇️ Descargar informe PDF</button>
         </div>
       </div>
       <div class="filters">
@@ -1111,9 +1110,15 @@ function confirmDec() {
 /* ---------------------------------------------------------------------
    INFORME PDF
 --------------------------------------------------------------------- */
-function exportPdfInforme(periodo) {
-  var selected = ['todo', 'semanal', 'quincenal', 'mensual'].indexOf(periodo) >= 0 ? periodo : 'todo';
-  var reportes = getReportsByPeriod(selected);
+function clearReportRange() {
+  document.getElementById('report-from').value = '';
+  document.getElementById('report-to').value = '';
+}
+
+function exportPdfInforme() {
+  var desde = v('report-from');
+  var hasta = v('report-to');
+  var reportes = getReportsByRange(desde, hasta);
   if (!reportes.length) {
     toast('No hay reportes para generar el informe seleccionado', 'err');
     return;
@@ -1126,7 +1131,7 @@ function exportPdfInforme(periodo) {
   }
 
   win.document.open();
-  win.document.write(buildInformeHtml(reportes, selected));
+  win.document.write(buildInformeHtml(reportes, desde, hasta));
   win.document.close();
   toast('Preparando informe PDF...', 'acc');
   setTimeout(function () {
@@ -1135,20 +1140,24 @@ function exportPdfInforme(periodo) {
   }, 450);
 }
 
-function getReportsByPeriod(periodo) {
-  if (periodo === 'todo') return S.reports.slice();
-  var days = { semanal: 7, quincenal: 15, mensual: 30 };
-  var from = new Date();
-  from.setHours(0, 0, 0, 0);
-  from.setDate(from.getDate() - days[periodo] + 1);
+function getReportsByRange(desde, hasta) {
+  if (!desde && !hasta) return S.reports.slice();
+  var from = desde ? new Date(desde + 'T00:00:00') : null;
+  var to = hasta ? new Date(hasta + 'T23:59:59') : null;
   return S.reports.filter(function (r) {
     var d = parseReportDate(r.fecha || r.fechaEnvio || r.createdAt);
-    return d && d >= from;
+    if (!d) return false;
+    if (from && d < from) return false;
+    if (to && d > to) return false;
+    return true;
   });
 }
 
-function buildInformeHtml(reportes, periodo) {
-  var periodoLabel = { todo: 'Todo el historial', semanal: 'Semanal', quincenal: 'Quincenal', mensual: 'Mensual' }[periodo] || 'Todo el historial';
+function buildInformeHtml(reportes, desde, hasta) {
+  var periodoLabel = 'Todo el historial';
+  if (desde && hasta) periodoLabel = formatReportDate(desde) + ' — ' + formatReportDate(hasta);
+  else if (desde) periodoLabel = 'Desde ' + formatReportDate(desde);
+  else if (hasta) periodoLabel = 'Hasta ' + formatReportDate(hasta);
   var now = new Date();
   var total = reportes.length;
   var pendientes = reportes.filter(function (r) { return r.status === 'pendiente'; }).length;
