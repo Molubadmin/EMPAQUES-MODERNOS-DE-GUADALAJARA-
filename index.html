@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="Reportes EMG"/>
 <meta name="theme-color" content="#0D2557"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
 :root{
   --pri:#0D2557;--pri2:#16347a;--acc:#00AEEF;--acc2:#0093cc;
@@ -15,12 +18,14 @@
   --g400:#94A3B8;--g600:#475569;--g800:#1E293B;
   --ok:#16A34A;--ok-bg:#F0FDF4;--err:#DC2626;--err-bg:#FEF2F2;
   --pend:#1D4ED8;--pend-bg:#EFF6FF;
-  --r:10px;--rl:16px;
+  --r:10px;--rl:14px;
 }
-*{box-sizing:border-box;margin:0;padding:0;font-family:"Segoe UI",system-ui,sans-serif}
-body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Inter","Segoe UI",system-ui,sans-serif}
+body{background:#F4F6F9;min-height:100vh;color:var(--g800);-webkit-tap-highlight-color:transparent}
 .screen{display:none;min-height:100vh;flex-direction:column}
 .screen.active{display:flex}
+#sc-supervisor.screen.active{height:100vh;overflow:hidden}
+.bdot{display:none}
 
 /* TOPBAR */
 .topbar{background:var(--pri);padding:.85rem 1.4rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.2);flex-shrink:0}
@@ -32,7 +37,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 
 /* CONTENT */
 .content{flex:1;padding:1.5rem;max-width:820px;width:100%;margin:0 auto}
-.sup-content{flex:1;padding:1.5rem;max-width:1020px;width:100%;margin:0 auto}
+.sup-content{flex:1;min-height:0;padding:1.6rem 2rem;max-width:1180px;width:100%;display:flex;flex-direction:column;overflow:hidden}
 
 /* CARD */
 .card{background:var(--wh);border-radius:var(--rl);padding:1.4rem;box-shadow:0 1px 4px rgba(0,0,0,.09);border:1px solid var(--g200);margin-bottom:1rem}
@@ -89,39 +94,56 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 .login-card img{height:50px;object-fit:contain;display:block;margin:0 auto 1.5rem}
 .login-card h2{font-size:.86rem;font-weight:700;color:var(--g600);text-align:center;text-transform:uppercase;letter-spacing:.07em;margin-bottom:1.2rem}
 
-/* TABS */
-.tab-bar{background:var(--wh);border-bottom:1px solid var(--g200);display:flex;padding:0 1.4rem;overflow-x:auto;flex-shrink:0}
-.tab-btn{padding:.76rem 1.05rem;font-size:.83rem;font-weight:600;color:var(--g600);border:none;background:none;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s}
-.tab-btn.active{color:var(--pri);border-bottom-color:var(--acc)}
-.tab-btn:hover:not(.active){color:var(--pri);background:var(--g50)}
-.tab-panel{display:none}.tab-panel.active{display:block}
+/* SIDEBAR (navegación del supervisor) */
+.sup-shell{display:flex;flex:1;min-height:0;overflow:hidden}
+.sup-sidebar{width:230px;flex-shrink:0;background:var(--wh);border-right:1px solid var(--g200);padding:1.3rem .9rem;display:flex;flex-direction:column;gap:.35rem;overflow-y:auto}
+.side-link{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.7rem .95rem;border-radius:.6rem;font-size:.85rem;font-weight:700;color:var(--g600);background:transparent;border:1.5px solid transparent;cursor:pointer;text-align:left;white-space:nowrap;transition:.15s}
+.side-link:hover:not(.active){background:var(--g50);color:var(--pri);border-color:var(--g200)}
+.side-link.active{background:var(--pri);color:#fff}
+.side-badge{background:var(--err);color:#fff;border-radius:.4rem;padding:.05rem .45rem;font-size:.68rem;font-weight:800}
+.side-link.active .side-badge{background:rgba(255,255,255,.22)}
+.tab-panel{display:none;flex-direction:column;min-height:0;flex:1}
+.tab-panel.active{display:flex}
+.panel-head{flex-shrink:0}
+.panel-title{font-size:.94rem;font-weight:800;color:var(--pri);margin-bottom:.7rem}
+.panel-scroll{flex:1;min-height:0;overflow-y:auto;padding-right:.4rem;margin-right:-.4rem}
+
+/* HERO (encabezado del panel) */
+.sup-hero{background:var(--wh);border:1px solid var(--g200);border-radius:var(--rl);padding:1.3rem 1.6rem;margin-bottom:1.3rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;flex-shrink:0}
+.sup-hero-eyebrow{font-size:.68rem;font-weight:800;color:var(--acc);text-transform:uppercase;letter-spacing:.09em;margin-bottom:.3rem}
+.sup-hero-title{font-size:1.35rem;font-weight:800;color:var(--pri);letter-spacing:-.01em}
+.sup-hero-chips{display:flex;gap:.7rem;flex-wrap:wrap}
+.sup-hero-chip{background:var(--g50);border:1px solid var(--g200);border-radius:.65rem;padding:.5rem .95rem;min-width:130px}
+.sup-hero-chip-lbl{display:block;font-size:.63rem;font-weight:800;color:var(--g400);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.15rem}
+.sup-hero-chip-val{display:block;font-size:.86rem;font-weight:700;color:var(--pri)}
 
 /* STATS */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:.85rem;margin-bottom:1.2rem}
-.stat{background:var(--wh);border-radius:var(--r);padding:.9rem 1.05rem;border:1px solid var(--g200);display:flex;align-items:center;gap:.8rem}
-.stat-ico{width:38px;height:38px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:1.15rem;flex-shrink:0}
-.stat-lbl{font-size:.69rem;color:var(--g600);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.stat-num{font-size:1.55rem;font-weight:700;color:var(--pri);line-height:1.1}
+.stat{background:var(--wh);border-radius:var(--r);padding:1rem 1.1rem;border:1px solid var(--g200);display:flex;flex-direction:column;gap:.5rem}
+.stat-ico{width:34px;height:34px;border-radius:.55rem;display:flex;align-items:center;justify-content:center;font-size:1.05rem;flex-shrink:0}
+.stat-lbl{font-size:.66rem;color:var(--g600);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.stat-num{font-size:1.7rem;font-weight:800;color:var(--pri);line-height:1.1;letter-spacing:-.01em}
 
 /* FILTERS */
 .filters{display:flex;gap:.5rem;margin-bottom:.85rem;flex-wrap:wrap}
-.fsel{padding:.38rem .65rem;border:1.5px solid var(--g200);border-radius:.5rem;font-size:.79rem;color:var(--g800);background:var(--wh);cursor:pointer}
+.fsel{padding:.5rem .75rem;border:1.5px solid var(--g200);border-radius:.6rem;font-size:.79rem;font-weight:600;color:var(--g800);background:var(--wh);cursor:pointer}
 .fsel:focus{outline:none;border-color:var(--acc)}
-.fsearch{flex:1;min-width:140px;padding:.38rem .7rem;border:1.5px solid var(--g200);border-radius:.5rem;font-size:.81rem;color:var(--g800)}
+.fsearch{flex:1;min-width:220px;padding:.6rem .95rem;border:1.5px solid var(--g200);border-radius:.7rem;font-size:.84rem;color:var(--g800);background:var(--wh)}
 .fsearch:focus{outline:none;border-color:var(--acc)}
+.fsearch::placeholder{color:var(--g400)}
 
 /* REP LIST */
-.rep-item{background:var(--wh);border-radius:var(--r);padding:.88rem 1.05rem;border:1px solid var(--g200);cursor:pointer;transition:.15s;display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;margin-bottom:.6rem}
-.rep-item:hover{border-color:var(--acc);box-shadow:0 2px 8px rgba(0,174,239,.1)}
+.rep-item{background:var(--wh);border-radius:.7rem;padding:1rem 1.2rem;border:1.5px solid var(--g200);cursor:pointer;transition:.15s;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:.65rem}
+.rep-item:hover{border-color:var(--acc)}
 .rep-item.pend{border-left:4px solid var(--acc)}
 .rep-item.ok{border-left:4px solid var(--ok)}
 .rep-item.err{border-left:4px solid var(--err)}
-.rep-folio{font-size:.67rem;font-weight:700;color:var(--acc);text-transform:uppercase;margin-bottom:.14rem}
-.rep-title{font-size:.9rem;font-weight:600;color:var(--g800);margin-bottom:.2rem}
-.rep-meta{font-size:.72rem;color:var(--g600);display:flex;flex-wrap:wrap;gap:.4rem}
+.rep-folio{font-size:.7rem;font-weight:800;color:var(--acc);text-transform:uppercase;letter-spacing:.03em;margin-bottom:.22rem}
+.rep-title{font-size:1rem;font-weight:700;color:var(--g800);margin-bottom:.28rem;letter-spacing:-.005em}
+.rep-meta{font-size:.71rem;color:var(--g600);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
 
 /* BADGES */
-.badge{display:inline-flex;align-items:center;gap:.18rem;padding:.19rem .55rem;border-radius:2rem;font-size:.68rem;font-weight:700;white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:.18rem;padding:.24rem .62rem;border-radius:.4rem;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
 .b-pend{background:var(--pend-bg);color:var(--pend)}
 .b-ok{background:var(--ok-bg);color:var(--ok)}
 .b-err{background:var(--err-bg);color:var(--err)}
@@ -130,7 +152,6 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 .b-crit{background:#FEE2E2;color:#991B1B}
 .b-fpend{background:var(--pend-bg);color:var(--pend)}
 .b-fres{background:var(--ok-bg);color:var(--ok)}
-.bdot{width:6px;height:6px;border-radius:50%;background:currentColor}
 
 /* MODAL */
 .modal-ov{position:fixed;inset:0;background:rgba(13,37,87,.55);z-index:1000;display:flex;align-items:flex-start;justify-content:center;padding:1.5rem 1rem;overflow-y:auto}
@@ -212,9 +233,13 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
   .chip-role{display:none}
   .btn-sm{padding:.3rem .6rem;font-size:.72rem}
 
-  /* Tab bar móvil */
-  .tab-bar{padding:0 .5rem}
-  .tab-btn{padding:.65rem .7rem;font-size:.75rem}
+  /* Sidebar móvil (se colapsa a barra horizontal) */
+  .sup-shell{flex-direction:column}
+  .sup-sidebar{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--g200);padding:.6rem .75rem}
+  .side-link{padding:.55rem .75rem;font-size:.75rem}
+  .sup-hero{padding:1rem 1.1rem}
+  .sup-hero-title{font-size:1.1rem}
+  .sup-hero-chip{min-width:auto;padding:.4rem .7rem}
 
   /* Cards */
   .card{padding:1rem}
@@ -288,7 +313,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 }
 
 @media(max-width:380px){
-  .tab-btn{padding:.6rem .5rem;font-size:.7rem}
+  .side-link{padding:.5rem .4rem;font-size:.68rem}
   .stats-grid{grid-template-columns:1fr 1fr}
   .topbar img{height:24px}
 }
@@ -493,66 +518,84 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
     </div>
   </div>
 
-  <div class="tab-bar">
-    <button class="tab-btn active" id="stab-dash" onclick="supTab('dash')">📊 Dashboard</button>
-    <button class="tab-btn" id="stab-pend" onclick="supTab('pend')">⏳ Pendientes <span id="pend-badge" style="background:var(--err);color:#fff;border-radius:1rem;padding:.03rem .4rem;font-size:.67rem;margin-left:.22rem;display:none"></span></button>
-    <button class="tab-btn" id="stab-todos" onclick="supTab('todos')">🗂️ Todos los Reportes</button>
+  <div class="sup-shell">
+    <aside class="sup-sidebar">
+      <button class="side-link active" id="stab-dash" onclick="supTab('dash')">Dashboard</button>
+      <button class="side-link" id="stab-pend" onclick="supTab('pend')">Pendientes <span id="pend-badge" class="side-badge" style="display:none"></span></button>
+      <button class="side-link" id="stab-todos" onclick="supTab('todos')">Todos los Reportes</button>
+    </aside>
 
-  </div>
+    <div class="sup-content">
 
-  <div class="sup-content">
-
-    <div id="spanel-dash" class="tab-panel active">
-      <div class="stats-grid" id="sp-stats"></div>
-      <div style="font-size:.93rem;font-weight:700;color:var(--pri);margin-bottom:.7rem">📌 Reportes Recientes</div>
-      <div id="sp-recent"></div>
-    </div>
-
-    <div id="spanel-pend" class="tab-panel">
-      <div style="font-size:.93rem;font-weight:700;color:var(--pri);margin-bottom:.7rem">⏳ Pendientes de Revisión</div>
-      <div id="sp-pend-list"></div>
-    </div>
-
-    <div id="spanel-todos" class="tab-panel">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.45rem">
-        <span style="font-size:.93rem;font-weight:700;color:var(--pri)">🗂️ Todos los Reportes</span>
-        <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap">
-          <label style="font-size:.75rem;color:var(--g600);font-weight:600" for="report-from">Del</label>
-          <input type="date" class="fsel" id="report-from" style="cursor:pointer"/>
-          <label style="font-size:.75rem;color:var(--g600);font-weight:600" for="report-to">Al</label>
-          <input type="date" class="fsel" id="report-to" style="cursor:pointer"/>
-          <button class="btn btn-ghost btn-sm" id="report-range-clear" onclick="clearReportRange()" title="Quitar filtro de fechas">✕</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportPdfInforme()">⬇️ Descargar informe PDF</button>
+      <div class="sup-hero">
+        <div>
+          <div class="sup-hero-eyebrow">Sistema de reportes de mantenimiento</div>
+          <div class="sup-hero-title">Panel de Supervisor</div>
+        </div>
+        <div class="sup-hero-chips">
+          <div class="sup-hero-chip"><span class="sup-hero-chip-lbl">Supervisor</span><span class="sup-hero-chip-val" id="hero-sup-name">Emmanuel</span></div>
+          <div class="sup-hero-chip"><span class="sup-hero-chip-lbl">Cliente</span><span class="sup-hero-chip-val">Empaques Modernos de Guadalajara</span></div>
         </div>
       </div>
-      <div class="filters">
-        <input class="fsearch" placeholder="🔍 Buscar técnico, área, folio..." id="f-search" oninput="renderTodos()"/>
-        <select class="fsel" id="f-status" onchange="renderTodos()">
-          <option value="">Todos los estados</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="autorizado">Autorizado</option>
-          <option value="rechazado">Rechazado</option>
-        </select>
-        <select class="fsel" id="f-area" onchange="renderTodos()">
-          <option value="">Todas las áreas</option>
-          <option>Producción</option><option>Mantenimiento</option><option>Calidad</option>
-          <option>Almacén</option><option>Logística</option><option>Administración</option>
-          <option>Seguridad</option><option>Otro</option>
-        </select>
-        <select class="fsel" id="f-prio" onchange="renderTodos()">
-          <option value="">Cualquier prioridad</option>
-          <option>Normal</option><option>Alta</option><option>Crítica</option>
-        </select>
-        <select class="fsel" id="f-falla" onchange="renderTodos()">
-          <option value="">Falla: cualquier estatus</option>
-          <option value="Pendiente">Falla pendiente</option>
-          <option value="Resuelto">Falla resuelta</option>
-          <option value="Sin falla">Sin falla (reportes normales)</option>
-        </select>
-      </div>
-      <div id="sp-todos-list"></div>
-    </div>
 
+      <div id="spanel-dash" class="tab-panel active">
+        <div class="panel-head">
+          <div class="stats-grid" id="sp-stats"></div>
+          <div class="panel-title">Reportes Recientes</div>
+        </div>
+        <div class="panel-scroll"><div id="sp-recent"></div></div>
+      </div>
+
+      <div id="spanel-pend" class="tab-panel">
+        <div class="panel-head">
+          <div class="panel-title">Pendientes de Revisión</div>
+        </div>
+        <div class="panel-scroll"><div id="sp-pend-list"></div></div>
+      </div>
+
+      <div id="spanel-todos" class="tab-panel">
+        <div class="panel-head">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.45rem">
+            <span class="panel-title" style="margin-bottom:0">Todos los Reportes</span>
+            <div style="display:flex;align-items:center;gap:.45rem;flex-wrap:wrap">
+              <label style="font-size:.75rem;color:var(--g600);font-weight:600" for="report-from">Del</label>
+              <input type="date" class="fsel" id="report-from" style="cursor:pointer"/>
+              <label style="font-size:.75rem;color:var(--g600);font-weight:600" for="report-to">Al</label>
+              <input type="date" class="fsel" id="report-to" style="cursor:pointer"/>
+              <button class="btn btn-ghost btn-sm" id="report-range-clear" onclick="clearReportRange()" title="Quitar filtro de fechas">✕</button>
+              <button class="btn btn-ghost btn-sm" onclick="exportPdfInforme()">Descargar informe PDF</button>
+            </div>
+          </div>
+          <div class="filters">
+            <input class="fsearch" placeholder="Buscar técnico, área, folio..." id="f-search" oninput="renderTodos()"/>
+            <select class="fsel" id="f-status" onchange="renderTodos()">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="autorizado">Autorizado</option>
+              <option value="rechazado">Rechazado</option>
+            </select>
+            <select class="fsel" id="f-area" onchange="renderTodos()">
+              <option value="">Todas las áreas</option>
+              <option>Producción</option><option>Mantenimiento</option><option>Calidad</option>
+              <option>Almacén</option><option>Logística</option><option>Administración</option>
+              <option>Seguridad</option><option>Otro</option>
+            </select>
+            <select class="fsel" id="f-prio" onchange="renderTodos()">
+              <option value="">Cualquier prioridad</option>
+              <option>Normal</option><option>Alta</option><option>Crítica</option>
+            </select>
+            <select class="fsel" id="f-falla" onchange="renderTodos()">
+              <option value="">Falla: cualquier estatus</option>
+              <option value="Pendiente">Falla pendiente</option>
+              <option value="Resuelto">Falla resuelta</option>
+              <option value="Sin falla">Sin falla (reportes normales)</option>
+            </select>
+          </div>
+        </div>
+        <div class="panel-scroll"><div id="sp-todos-list"></div></div>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -732,9 +775,9 @@ function checkFolioHistorial() {
 }
 
 function fBadge(s) {
-  if (s === 'Resuelto') return '<span class="badge b-fres"><span class="bdot"></span>✅ Falla resuelta</span>';
-  if (s === 'Pendiente') return '<span class="badge b-fpend"><span class="bdot"></span>⏳ Falla pendiente</span>';
-  return '<span class="badge b-norm"><span class="bdot"></span>➖ Sin falla</span>';
+  if (s === 'Resuelto') return '<span class="badge b-fres">Falla resuelta</span>';
+  if (s === 'Pendiente') return '<span class="badge b-fpend">Falla pendiente</span>';
+  return '<span class="badge b-norm">Sin falla</span>';
 }
 
 function openHistorial(norm) {
@@ -933,6 +976,8 @@ function doLogin() {
     S.supName = SUP_USERS[user].name;
     document.getElementById('sup-name-lbl').textContent = S.supName;
     document.getElementById('sup-av').textContent = SUP_USERS[user].initial;
+    var heroName = document.getElementById('hero-sup-name');
+    if (heroName) heroName.textContent = S.supName;
     showScreen('supervisor');
     loadSupReports();
   } else {
@@ -1111,13 +1156,14 @@ function repItem(r) {
   var folio = String(r.folio || '');
   var keyArg = reportKey(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   var histCount = getFolioEntries(normalizeFolio(folio)).length;
+  var metaParts = [r.autorNombre, r.area, r.equipo || 'Sin equipo', r.turno, formatReportDate(d)].filter(Boolean);
   return '<div class="rep-item ' + hl + '" onclick="openDetalle(\'' + keyArg + '\')">' +
     '<div style="flex:1;min-width:0">' +
       '<div class="rep-folio">' + esc(folio) + (histCount > 1 ? ' · ' + histCount + ' seguimientos' : '') + '</div>' +
       '<div class="rep-title">' + esc(r.titulo) + '</div>' +
-      '<div class="rep-meta"><span>👷 ' + esc(r.autorNombre) + '</span><span>📁 ' + esc(r.area) + '</span><span>⚙️ ' + esc(r.equipo || 'Sin equipo') + '</span><span>🕐 ' + esc(r.turno) + '</span><span>📅 ' + esc(d) + '</span></div>' +
+      '<div class="rep-meta">' + esc(metaParts.join('  ·  ')) + '</div>' +
     '</div>' +
-    '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.28rem;flex-shrink:0">' + sBadge(r.status) + fBadge(r.estatusFalla) + pBadge(r.prioridad) + '</div>' +
+    '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.32rem;flex-shrink:0">' + sBadge(r.status) + fBadge(r.estatusFalla) + pBadge(r.prioridad) + '</div>' +
   '</div>';
 }
 
@@ -1643,9 +1689,9 @@ function supTab(id) {
   });
 }
 function sBadge(s) {
-  var m = { pendiente: ['b-pend', '⏳ Pendiente'], autorizado: ['b-ok', '✅ Autorizado'], rechazado: ['b-err', '❌ Rechazado'] };
+  var m = { pendiente: ['b-pend', 'Pendiente'], autorizado: ['b-ok', 'Autorizado'], rechazado: ['b-err', 'Rechazado'] };
   var p = m[s] || m.pendiente;
-  return '<span class="badge ' + p[0] + '"><span class="bdot"></span>' + p[1] + '</span>';
+  return '<span class="badge ' + p[0] + '">' + p[1] + '</span>';
 }
 function pBadge(p) { var m = { Alta: 'b-alta', Crítica: 'b-crit', Normal: 'b-norm' }; return '<span class="badge ' + (m[p] || 'b-norm') + '">' + (p || 'Normal') + '</span>'; }
 function limpiarForm() {
