@@ -53,6 +53,10 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--acc)}
 .fg textarea{min-height:90px;resize:vertical}
 
+/* FOLIO HINT (historial) */
+.folio-hint{margin-top:.5rem;padding:.55rem .75rem;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:.5rem;font-size:.78rem;color:#1D4ED8;line-height:1.5}
+.folio-hint a{color:#0D2557;font-weight:700;text-decoration:underline;cursor:pointer}
+
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;padding:.62rem 1.25rem;border-radius:var(--r);font-size:.88rem;font-weight:600;border:none;cursor:pointer;transition:.15s}
 .btn-pri{background:var(--pri);color:#fff}.btn-pri:hover{background:var(--pri2)}
@@ -124,6 +128,8 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 .b-norm{background:#F1F5F9;color:#475569}
 .b-alta{background:#FEF3C7;color:#92400E}
 .b-crit{background:#FEE2E2;color:#991B1B}
+.b-fpend{background:var(--pend-bg);color:var(--pend)}
+.b-fres{background:var(--ok-bg);color:var(--ok)}
 .bdot{width:6px;height:6px;border-radius:50%;background:currentColor}
 
 /* MODAL */
@@ -152,6 +158,11 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 .det-img:hover{border-color:var(--acc);transform:scale(1.04)}
 .det-btitle{font-size:.69rem;font-weight:700;color:var(--acc);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.4rem;padding-bottom:.26rem;border-bottom:1px solid var(--g200)}
 .det-block p{font-size:.86rem;color:var(--g800);line-height:1.65;white-space:pre-wrap}
+
+/* HISTORIAL DE FOLIO */
+.hist-entry{background:var(--g50);border:1px solid var(--g200);border-left:4px solid var(--acc);border-radius:.6rem;padding:.75rem .9rem;margin-bottom:.7rem}
+.hist-entry .det-lbl{color:var(--acc)}
+.hist-entry .det-val{margin-bottom:.15rem}
 
 /* TIMELINE */
 .tl{display:flex;flex-direction:column}
@@ -319,7 +330,7 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
         <span class="chip-role">Técnico</span>
       </div>
       <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.28);font-size:.75rem" onclick="cambiarNombre()">Cambiar nombre</button>
-      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.28);font-size:.75rem" onclick="showScreen('login')">🔐 Supervisor</button>
+      <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.28);font-size:.75rem" onclick="goSupervisor()">🔐 Supervisor</button>
     </div>
   </div>
 
@@ -338,7 +349,8 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
       <div class="fsec">📌 Información General</div>
       <div class="frow">
         <div class="fg"><label>Folio de Orden de Lubricación</label>
-          <input type="text" id="nr-folio" placeholder="Ej. OL-12345"/>
+          <input type="text" id="nr-folio" placeholder="Ej. OL-12345" oninput="checkFolioHistorial()"/>
+          <div class="folio-hint" id="nr-folio-hint" style="display:none"></div>
         </div>
         <div class="fg"><label>Área</label>
           <select id="nr-area">
@@ -368,6 +380,13 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
             <option value="Normal">Normal</option>
             <option value="Alta">Alta</option>
             <option value="Crítica">Crítica</option>
+          </select>
+        </div>
+        <div class="fg"><label>Estatus de la falla (seguimiento del folio)</label>
+          <select id="nr-estatus-falla">
+            <option value="Sin falla">➖ Sin falla — reporte normal</option>
+            <option value="Pendiente">⏳ Pendiente — sigue sin resolverse</option>
+            <option value="Resuelto">✅ Resuelto — ya se atendió</option>
           </select>
         </div>
       </div>
@@ -524,6 +543,12 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
           <option value="">Cualquier prioridad</option>
           <option>Normal</option><option>Alta</option><option>Crítica</option>
         </select>
+        <select class="fsel" id="f-falla" onchange="renderTodos()">
+          <option value="">Falla: cualquier estatus</option>
+          <option value="Pendiente">Falla pendiente</option>
+          <option value="Resuelto">Falla resuelta</option>
+          <option value="Sin falla">Sin falla (reportes normales)</option>
+        </select>
       </div>
       <div id="sp-todos-list"></div>
     </div>
@@ -554,6 +579,15 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
   </div>
 </div>
 
+<!-- MODAL HISTORIAL DE FOLIO -->
+<div class="modal-ov hidden" id="mod-hist">
+  <div class="modal">
+    <div class="mh"><h3 id="mod-hist-title">Historial de Folio</h3><button class="btn-x" onclick="closeModal('mod-hist')">✕</button></div>
+    <div class="mb" id="mod-hist-body"></div>
+    <div class="mf" id="mod-hist-footer"></div>
+  </div>
+</div>
+
 <div class="lbox hidden" id="lbox" onclick="this.classList.add('hidden')">
   <button class="lbox-x">✕</button>
   <img id="lbox-img" src="" alt=""/>
@@ -561,16 +595,12 @@ body{background:#EEF2F7;min-height:100vh;color:var(--g800);-webkit-tap-highlight
 <script>
 /* ======================================================================
    Empaques Modernos de Guadalajara — Reportes
-   Script corregido:
-   - Se eliminó EmailJS (los correos ahora los manda solo Apps Script/MailApp)
-   - Se corrigió un error de sintaxis en openDetalle() que rompía TODO el
-     script (por eso ningún botón "Entrar" funcionaba)
-   - Ahora sí se envían las fotos (base64) al backend para que se
-     guarden en Google Drive
-   - Las peticiones ya no usan mode:'no-cors', así que se puede leer
-     la respuesta real del servidor (éxito/error, folio, fotos, correo)
-   - Las fotos se redimensionan/comprimen en el navegador antes de
-     enviarse (más rápido y confiable)
+   v5: agrega historial de folios (agrupación normalizada FOL-125 = fol 125
+   = FOL125), un campo independiente "Estatus de la falla" (Pendiente /
+   Resuelto) sobre el caso, y las funciones "Ver historial", "Agregar
+   seguimiento" y "Descargar historial PDF", disponibles tanto para
+   técnicos como para el supervisor — sin tocar el flujo de autorización
+   existente (Estado: Pendiente/Autorizado/Rechazado sigue igual).
    ====================================================================== */
 
 var S = {
@@ -612,6 +642,10 @@ window.onload = function () {
     applyNombre();
     document.getElementById('name-ov').classList.add('hidden');
   }
+  // Carga silenciosa de reportes existentes para poder detectar folios
+  // repetidos (historial) desde la pantalla de técnico, sin necesidad de
+  // iniciar sesión de supervisor.
+  loadAllReportsSilent();
 };
 
 function loadCfg() {
@@ -646,6 +680,113 @@ function cambiarNombre() {
 }
 
 /* ---------------------------------------------------------------------
+   HISTORIAL DE FOLIOS — normalización y agrupación
+   Un folio se normaliza a mayúsculas y sin espacios/guiones para que
+   "FOL-125", "fol 125" y "FOL125" se agrupen como el mismo caso, tal
+   como pide la guía de historial de folios.
+--------------------------------------------------------------------- */
+function normalizeFolio(f) {
+  return String(f || '').toUpperCase().replace(/[\s\-]+/g, '');
+}
+function getFolioEntries(norm) {
+  if (!norm) return [];
+  return S.reports.filter(function (r) { return normalizeFolio(r.folio) === norm; });
+}
+function sortEntriesByDate(entries) {
+  return entries.slice().sort(function (a, b) {
+    var da = parseReportDate(a.fecha || a.fechaEnvio || a.createdAt);
+    var db = parseReportDate(b.fecha || b.fechaEnvio || b.createdAt);
+    return (da ? da.getTime() : 0) - (db ? db.getTime() : 0);
+  });
+}
+
+// Carga los reportes de Sheets en segundo plano (sin bloquear ni afectar
+// las pantallas de supervisor) para poder avisar al técnico si el folio
+// que está escribiendo ya tiene historial.
+function loadAllReportsSilent() {
+  var sheetUrl = S.cfg.sheetsUrl || SHEETS_URL;
+  fetch(sheetUrl)
+    .then(function (r) { return r.json(); })
+    .then(function (rows) {
+      if (!Array.isArray(rows) || rows.length < 2) return;
+      S.reports = parseSheetRows(rows);
+      checkFolioHistorial();
+    })
+    .catch(function (e) { console.log('No se pudo precargar historial de folios', e); });
+}
+
+function checkFolioHistorial() {
+  var box = document.getElementById('nr-folio-hint');
+  if (!box) return;
+  var norm = normalizeFolio(v('nr-folio'));
+  if (!norm) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  var entries = getFolioEntries(norm);
+  if (entries.length) {
+    box.style.display = '';
+    box.innerHTML = '📜 Este folio ya tiene <strong>' + entries.length + '</strong> reporte(s) anterior(es) registrados. ' +
+      '<a onclick="openHistorial(\'' + norm + '\')">Ver historial</a>';
+  } else {
+    box.style.display = 'none';
+    box.innerHTML = '';
+  }
+}
+
+function fBadge(s) {
+  if (s === 'Resuelto') return '<span class="badge b-fres"><span class="bdot"></span>✅ Falla resuelta</span>';
+  if (s === 'Pendiente') return '<span class="badge b-fpend"><span class="bdot"></span>⏳ Falla pendiente</span>';
+  return '<span class="badge b-norm"><span class="bdot"></span>➖ Sin falla</span>';
+}
+
+function openHistorial(norm) {
+  var entries = sortEntriesByDate(getFolioEntries(norm));
+  if (!entries.length) { toast('No hay historial para este folio', 'err'); return; }
+  var folioDisplay = entries[entries.length - 1].folio || norm;
+  document.getElementById('mod-hist-title').textContent = '📜 Historial — ' + folioDisplay;
+
+  var intro = '<div style="margin-bottom:.9rem;font-size:.8rem;color:var(--g600)">' +
+    entries.length + ' seguimiento(s) registrados para este folio, ordenados del más antiguo al más reciente.</div>';
+  var body = entries.map(function (e, i) { return histEntryHtml(e, i + 1); }).join('');
+  document.getElementById('mod-hist-body').innerHTML = intro + body;
+
+  document.getElementById('mod-hist-footer').innerHTML =
+    '<button class="btn btn-ghost" onclick="closeModal(\'mod-hist\')">Cerrar</button>' +
+    '<button class="btn btn-pri" onclick="exportHistorialPdf(\'' + norm + '\')">⬇️ Descargar historial PDF</button>' +
+    '<button class="btn btn-ok" onclick="closeModal(\'mod-hist\');agregarSeguimiento(\'' + norm + '\')">➕ Agregar seguimiento</button>';
+  openModal('mod-hist');
+}
+
+function histEntryHtml(e, n) {
+  var d = e.fecha || e.fechaEnvio || e.createdAt || '—';
+  var desc = [
+    e.cumplidas ? ('Cumplidas: ' + e.cumplidas) : '',
+    e.noCumplidas ? ('No cumplidas: ' + e.noCumplidas) : '',
+    e.motivoNoCumplida ? ('Motivo: ' + e.motivoNoCumplida) : '',
+    e.anomaliasEquipo ? ('Anomalías: ' + e.anomaliasEquipo) : '',
+    e.observaciones ? ('Observaciones: ' + e.observaciones) : ''
+  ].filter(Boolean).join(' · ');
+  return '<div class="hist-entry">' +
+    '<div class="det-lbl">Seguimiento ' + n + ' — ' + esc(formatReportDate(d)) + '</div>' +
+    '<div class="det-val" style="display:flex;gap:.4rem;flex-wrap:wrap;margin:.35rem 0 .5rem">' + fBadge(e.estatusFalla) + sBadge(e.status) + pBadge(e.prioridad) + '</div>' +
+    '<div class="det-val"><strong>Responsable:</strong> ' + esc(e.autorNombre || '—') + ' &nbsp; <strong>Equipo:</strong> ' + esc(e.equipo || '—') + '</div>' +
+    (desc ? '<div class="det-val" style="margin-top:.3rem">' + esc(desc) + '</div>' : '') +
+  '</div>';
+}
+
+function agregarSeguimiento(norm) {
+  var entries = sortEntriesByDate(getFolioEntries(norm));
+  var last = entries[entries.length - 1] || {};
+  showScreen('tecnico');
+  document.getElementById('nr-folio').value = last.folio || '';
+  document.getElementById('nr-area').value = last.area || S.tecArea || '';
+  document.getElementById('nr-equipo').value = last.equipo || '';
+  document.getElementById('nr-titulo').value = last.titulo ? ('Seguimiento — ' + last.titulo) : 'Seguimiento';
+  document.getElementById('nr-estatus-falla').value = 'Pendiente';
+  checkFolioHistorial();
+  toast('📝 Agrega la actualización de este folio y envíala', 'acc');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ---------------------------------------------------------------------
    ENVÍO DE REPORTE (incluye fotos reales)
 --------------------------------------------------------------------- */
 function enviarReporte() {
@@ -654,6 +795,7 @@ function enviarReporte() {
   var folio = v('nr-folio'), titulo = v('nr-titulo'), area = v('nr-area'), turno = v('nr-turno'),
       fecha = v('nr-fecha'), cumplidas = v('nr-cumplidas');
   var equipo = v('nr-equipo'), tareaCumplida = v('nr-tarea-cumplida');
+  var estatusFalla = v('nr-estatus-falla') || 'Sin falla';
 
   if (!folio || !titulo || !area || !turno || !equipo || !tareaCumplida || !cumplidas) {
     toast('Completa: folio, área, turno, equipo, tarea cumplida, título y actividades cumplidas', 'err');
@@ -673,6 +815,7 @@ function enviarReporte() {
     anomaliasEquipo: v('nr-anomalias'),
     observaciones: v('nr-obs'), comentarios: v('nr-comentarios'),
     imagenes: imagenesBase64,
+    estatusFalla: estatusFalla,
     autorNombre: S.tecNombre, status: 'pendiente',
     createdAt: new Date().toISOString(),
     historial: [{ accion: 'enviado', por: S.tecNombre, fecha: new Date().toISOString(), comentario: '' }]
@@ -700,6 +843,7 @@ function enviarReporte() {
         var msg = '✅ Reporte enviado y guardado en Google Sheets';
         if (fotos > 0) msg += ' — ' + fotos + ' foto(s) subida(s) a Drive';
         toast(msg, 'ok');
+        loadAllReportsSilent(); // refresca el historial local con este nuevo seguimiento
       } else {
         toast('⚠️ El servidor respondió con un error. El reporte quedó guardado localmente; vuelve a intentar enviarlo más tarde.', 'err');
         console.warn('Respuesta del servidor:', res);
@@ -797,9 +941,82 @@ function doLogin() {
 }
 function doLogout() { S.supIn = false; S.supName = ''; showScreen('tecnico'); }
 
+// Si el supervisor ya inició sesión (por ejemplo, va y viene para agregar
+// un seguimiento desde la pantalla de técnico), este botón lo regresa
+// directo al panel en vez de pedirle iniciar sesión de nuevo.
+function goSupervisor() {
+  if (S.supIn) { showScreen('supervisor'); loadSupReports(); }
+  else { showScreen('login'); }
+}
+
 /* ---------------------------------------------------------------------
    CARGA DE REPORTES (local + Google Sheets)
 --------------------------------------------------------------------- */
+
+// Convierte las filas crudas de Sheets (con encabezados en la fila 0) en
+// objetos de reporte usables por toda la app (dashboard, historial, etc.)
+function parseSheetRows(rows) {
+  var headers = rows[0];
+  function idx(name) { return headers.indexOf(name); }
+  var folioIdx = idx('Folio');
+  var fechaEnvioIdx = idx('Fecha de Envio') >= 0 ? idx('Fecha de Envio') : idx('Fecha de Envío');
+  var tecnicoIdx = idx('Tecnico') >= 0 ? idx('Tecnico') : idx('Técnico');
+  var areaIdx = idx('Area') >= 0 ? idx('Area') : idx('Área');
+  var turnoIdx = idx('Turno');
+  var fechaIdx = idx('Fecha del Reporte');
+  var prioIdx = idx('Prioridad');
+  var tituloIdx = idx('Titulo') >= 0 ? idx('Titulo') : idx('Título');
+  var equipoIdx = idx('Equipo Atendido');
+  var tareaIdx = idx('Tarea Cumplida');
+  var cumpIdx = idx('Actividades Cumplidas');
+  var nocumpIdx = idx('Actividades No Cumplidas');
+  var motivoIdx = idx('Motivo No Cumplida');
+  var anomIdx = idx('Anomalias del Equipo') >= 0 ? idx('Anomalias del Equipo') : idx('Anomalías del Equipo');
+  var obsIdx = idx('Observaciones');
+  var comIdx = idx('Comentarios Adicionales');
+  var statusIdx = idx('Estado');
+  var supIdx = idx('Supervisor');
+  var supComIdx = idx('Comentario del Supervisor');
+  var linksIdx = idx('Links Fotografias') >= 0 ? idx('Links Fotografias') : idx('Links Fotografías');
+  var fallaIdx = idx('Estatus de Falla');
+
+  return rows.slice(1).map(function (r, rowIndex) {
+    return { row: r, rowNumber: rowIndex + 2 };
+  }).filter(function (item) { return item.row[folioIdx]; }).map(function (item) {
+    var r = item.row;
+    var folio = String(r[folioIdx] || '').trim();
+    var linksRaw = linksIdx >= 0 ? (r[linksIdx] || '') : '';
+    var fotoLinks = String(linksRaw).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    return {
+      _key: 'sheet-' + item.rowNumber,
+      _rowNumber: item.rowNumber,
+      folio: folio,
+      titulo: tituloIdx >= 0 ? (r[tituloIdx] || '') : '',
+      autorNombre: tecnicoIdx >= 0 ? (r[tecnicoIdx] || '') : '',
+      area: areaIdx >= 0 ? (r[areaIdx] || '') : '',
+      turno: turnoIdx >= 0 ? (r[turnoIdx] || '') : '',
+      fecha: fechaIdx >= 0 ? (r[fechaIdx] || '') : '',
+      prioridad: prioIdx >= 0 ? (r[prioIdx] || 'Normal') : 'Normal',
+      equipo: equipoIdx >= 0 ? (r[equipoIdx] || '') : '',
+      tareaCumplida: tareaIdx >= 0 ? (r[tareaIdx] || '') : '',
+      cumplidas: cumpIdx >= 0 ? (r[cumpIdx] || '') : '',
+      noCumplidas: nocumpIdx >= 0 ? (r[nocumpIdx] || '') : '',
+      motivoNoCumplida: motivoIdx >= 0 ? (r[motivoIdx] || '') : '',
+      anomaliasEquipo: anomIdx >= 0 ? (r[anomIdx] || '') : '',
+      observaciones: obsIdx >= 0 ? (r[obsIdx] || '') : '',
+      comentarios: comIdx >= 0 ? (r[comIdx] || '') : '',
+      status: (statusIdx >= 0 ? (r[statusIdx] || 'pendiente') : 'pendiente').toString().toLowerCase(),
+      estatusFalla: fallaIdx >= 0 ? (r[fallaIdx] || 'Sin falla') : 'Sin falla',
+      supervisorNombre: supIdx >= 0 ? (r[supIdx] || '') : '',
+      supervisorComentario: supComIdx >= 0 ? (r[supComIdx] || '') : '',
+      fechaEnvio: fechaEnvioIdx >= 0 ? (r[fechaEnvioIdx] || '') : '',
+      fotoLinks: fotoLinks,
+      createdAt: (fechaEnvioIdx >= 0 ? r[fechaEnvioIdx] : '') || '',
+      historial: []
+    };
+  });
+}
+
 function loadSupReports() {
   S.reports = loadLocal();
   renderDash(); renderPend(); renderTodos();
@@ -809,67 +1026,15 @@ function loadSupReports() {
     .then(function (r) { return r.json(); })
     .then(function (rows) {
       if (!Array.isArray(rows) || rows.length < 2) return;
-      var headers = rows[0];
-
-      function idx(name) { return headers.indexOf(name); }
-      var folioIdx = idx('Folio');
-      var fechaEnvioIdx = idx('Fecha de Envio') >= 0 ? idx('Fecha de Envio') : idx('Fecha de Envío');
-      var tecnicoIdx = idx('Tecnico') >= 0 ? idx('Tecnico') : idx('Técnico');
-      var areaIdx = idx('Area') >= 0 ? idx('Area') : idx('Área');
-      var turnoIdx = idx('Turno');
-      var fechaIdx = idx('Fecha del Reporte');
-      var prioIdx = idx('Prioridad');
-      var tituloIdx = idx('Titulo') >= 0 ? idx('Titulo') : idx('Título');
-      var equipoIdx = idx('Equipo Atendido');
-      var tareaIdx = idx('Tarea Cumplida');
-      var cumpIdx = idx('Actividades Cumplidas');
-      var nocumpIdx = idx('Actividades No Cumplidas');
-      var motivoIdx = idx('Motivo No Cumplida');
-      var anomIdx = idx('Anomalias del Equipo') >= 0 ? idx('Anomalias del Equipo') : idx('Anomalías del Equipo');
-      var obsIdx = idx('Observaciones');
-      var comIdx = idx('Comentarios Adicionales');
-      var statusIdx = idx('Estado');
-      var supIdx = idx('Supervisor');
-      var supComIdx = idx('Comentario del Supervisor');
-      var linksIdx = idx('Links Fotografias') >= 0 ? idx('Links Fotografias') : idx('Links Fotografías');
 
       var localMap = {};
       S.reports.forEach(function (r) { localMap[String(r.folio || '')] = r; });
 
-      var sheetReps = rows.slice(1).map(function (r, rowIndex) {
-        return { row: r, rowNumber: rowIndex + 2 };
-      }).filter(function (item) { return item.row[folioIdx]; }).map(function (item) {
-        var r = item.row;
-        var folio = String(r[folioIdx] || '').trim();
-        var local = localMap[folio] || {};
-        var linksRaw = linksIdx >= 0 ? (r[linksIdx] || '') : '';
-        var fotoLinks = String(linksRaw).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
-        return {
-          _key: 'sheet-' + item.rowNumber,
-          _rowNumber: item.rowNumber,
-          folio: folio,
-          titulo: tituloIdx >= 0 ? (r[tituloIdx] || '') : '',
-          autorNombre: tecnicoIdx >= 0 ? (r[tecnicoIdx] || '') : '',
-          area: areaIdx >= 0 ? (r[areaIdx] || '') : '',
-          turno: turnoIdx >= 0 ? (r[turnoIdx] || '') : '',
-          fecha: fechaIdx >= 0 ? (r[fechaIdx] || '') : '',
-          prioridad: prioIdx >= 0 ? (r[prioIdx] || 'Normal') : 'Normal',
-          equipo: equipoIdx >= 0 ? (r[equipoIdx] || '') : '',
-          tareaCumplida: tareaIdx >= 0 ? (r[tareaIdx] || '') : '',
-          cumplidas: cumpIdx >= 0 ? (r[cumpIdx] || '') : '',
-          noCumplidas: nocumpIdx >= 0 ? (r[nocumpIdx] || '') : '',
-          motivoNoCumplida: motivoIdx >= 0 ? (r[motivoIdx] || '') : '',
-          anomaliasEquipo: anomIdx >= 0 ? (r[anomIdx] || '') : '',
-          observaciones: obsIdx >= 0 ? (r[obsIdx] || '') : '',
-          comentarios: comIdx >= 0 ? (r[comIdx] || '') : '',
-          status: (statusIdx >= 0 ? (r[statusIdx] || 'pendiente') : 'pendiente').toString().toLowerCase(),
-          supervisorNombre: supIdx >= 0 ? (r[supIdx] || '') : '',
-          supervisorComentario: supComIdx >= 0 ? (r[supComIdx] || '') : '',
-          fechaEnvio: fechaEnvioIdx >= 0 ? (r[fechaEnvioIdx] || '') : '',
-          fotoLinks: fotoLinks,
-          createdAt: local.createdAt || (fechaEnvioIdx >= 0 ? r[fechaEnvioIdx] : '') || '',
-          historial: local.historial || []
-        };
+      var sheetReps = parseSheetRows(rows).map(function (r) {
+        var local = localMap[r.folio] || {};
+        r.createdAt = local.createdAt || r.createdAt;
+        r.historial = local.historial || [];
+        return r;
       });
 
       S.reports = sheetReps;
@@ -886,11 +1051,13 @@ function renderDash() {
   var tot = r.length, pend = r.filter(function (x) { return x.status === 'pendiente'; }).length;
   var auth = r.filter(function (x) { return x.status === 'autorizado'; }).length;
   var rej = r.filter(function (x) { return x.status === 'rechazado'; }).length;
+  var fallaPend = r.filter(function (x) { return x.estatusFalla === 'Pendiente'; }).length;
   document.getElementById('sp-stats').innerHTML =
     sCard('📋', '#EFF6FF', '#1D4ED8', 'Total Reportes', tot) +
-    sCard('⏳', '#FEF9C3', '#92400E', 'Pendientes', pend) +
+    sCard('⏳', '#FEF9C3', '#92400E', 'Pendientes de Revisión', pend) +
     sCard('✅', '#F0FDF4', '#16A34A', 'Autorizados', auth) +
-    sCard('❌', '#FEF2F2', '#DC2626', 'Rechazados', rej);
+    sCard('❌', '#FEF2F2', '#DC2626', 'Rechazados', rej) +
+    sCard('🔧', '#EFF6FF', '#1D4ED8', 'Fallas Pendientes', fallaPend);
   var pb = document.getElementById('pend-badge');
   pb.textContent = pend; pb.style.display = pend ? 'inline' : 'none';
   document.getElementById('sp-recent').innerHTML = r.slice(0, 6).map(repItem).join('');
@@ -911,11 +1078,12 @@ function renderPend() {
 
 function renderTodos() {
   var search = (v('f-search') || '').toLowerCase();
-  var status = v('f-status'), area = v('f-area'), prio = v('f-prio');
+  var status = v('f-status'), area = v('f-area'), prio = v('f-prio'), falla = v('f-falla');
   var list = S.reports.slice();
   if (status) list = list.filter(function (r) { return r.status === status; });
   if (area) list = list.filter(function (r) { return r.area === area; });
   if (prio) list = list.filter(function (r) { return r.prioridad === prio; });
+  if (falla) list = list.filter(function (r) { return (r.estatusFalla || 'Sin falla') === falla; });
   if (search) list = list.filter(function (r) { return (r.titulo + r.area + r.folio + r.autorNombre).toLowerCase().indexOf(search) >= 0; });
   var el = document.getElementById('sp-todos-list');
   if (!list.length) {
@@ -942,13 +1110,14 @@ function repItem(r) {
   var hl = r.status === 'pendiente' ? 'pend' : (r.status === 'autorizado' ? 'ok' : 'err');
   var folio = String(r.folio || '');
   var keyArg = reportKey(r).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  var histCount = getFolioEntries(normalizeFolio(folio)).length;
   return '<div class="rep-item ' + hl + '" onclick="openDetalle(\'' + keyArg + '\')">' +
     '<div style="flex:1;min-width:0">' +
-      '<div class="rep-folio">' + esc(folio) + '</div>' +
+      '<div class="rep-folio">' + esc(folio) + (histCount > 1 ? ' · ' + histCount + ' seguimientos' : '') + '</div>' +
       '<div class="rep-title">' + esc(r.titulo) + '</div>' +
       '<div class="rep-meta"><span>👷 ' + esc(r.autorNombre) + '</span><span>📁 ' + esc(r.area) + '</span><span>⚙️ ' + esc(r.equipo || 'Sin equipo') + '</span><span>🕐 ' + esc(r.turno) + '</span><span>📅 ' + esc(d) + '</span></div>' +
     '</div>' +
-    '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.28rem;flex-shrink:0">' + sBadge(r.status) + pBadge(r.prioridad) + '</div>' +
+    '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.28rem;flex-shrink:0">' + sBadge(r.status) + fBadge(r.estatusFalla) + pBadge(r.prioridad) + '</div>' +
   '</div>';
 }
 
@@ -995,7 +1164,7 @@ function openDetalle(key) {
 
   var hist = '';
   if (r.historial && r.historial.length) {
-    hist = '<div class="det-block"><div class="det-btitle">📋 Historial</div><div class="tl">';
+    hist = '<div class="det-block"><div class="det-btitle">📋 Historial de revisión</div><div class="tl">';
     r.historial.forEach(function (h) {
       var dc = h.accion === 'autorizado' ? 'a' : (h.accion === 'rechazado' ? 'r' : 's');
       var ico = { enviado: '📤', autorizado: '✅', rechazado: '❌' }[h.accion] || '📝';
@@ -1008,6 +1177,7 @@ function openDetalle(key) {
 
   var body = '<div class="det-grid">' +
     dR('Folio', r.folio) + dR('Estado', sBadge(r.status)) +
+    fallaRowHtml(r, key) +
     dR('Área', esc(r.area)) + dR('Turno', esc(r.turno || '—')) +
     dR('Fecha', esc(r.fecha || '—')) + dR('Prioridad', pBadge(r.prioridad)) +
     dR('Equipo', esc(r.equipo || '—')) + dR('Tarea cumplida', esc(r.tareaCumplida || '—')) +
@@ -1024,13 +1194,75 @@ function openDetalle(key) {
 
   document.getElementById('mod-rep-body').innerHTML = body;
   var canDec = S.supIn && r.status === 'pendiente';
+  var keyEsc = String(key).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  var norm = normalizeFolio(r.folio);
   document.getElementById('mod-rep-footer').innerHTML =
     '<button class="btn btn-ghost" onclick="closeModal(\'mod-rep\')">Cerrar</button>' +
-    (canDec ? '<button class="btn btn-err" onclick="openDec(\'' + String(key).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\',\'rechazado\')">❌ Rechazar</button><button class="btn btn-ok" onclick="openDec(\'' + String(key).replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\',\'autorizado\')">✅ Autorizar</button>' : '');
+    '<button class="btn btn-ghost" onclick="openHistorial(\'' + norm + '\')">📜 Ver historial</button>' +
+    '<button class="btn btn-ghost" onclick="closeModal(\'mod-rep\');agregarSeguimiento(\'' + norm + '\')">➕ Agregar seguimiento</button>' +
+    (canDec ? '<button class="btn btn-err" onclick="openDec(\'' + keyEsc + '\',\'rechazado\')">❌ Rechazar</button><button class="btn btn-ok" onclick="openDec(\'' + keyEsc + '\',\'autorizado\')">✅ Autorizar</button>' : '');
   openModal('mod-rep');
 }
 function dR(l, val) { return '<div class="det-row"><div class="det-lbl">' + l + '</div><div class="det-val">' + val + '</div></div>'; }
 function blk(t, text) { return '<div class="det-block"><div class="det-btitle">' + t + '</div><p>' + esc(text || '—') + '</p></div>'; }
+
+// Fila de "Estatus de la falla" en el detalle: si hay sesión de supervisor
+// se muestra como un selector editable (con botón Guardar) que actualiza
+// SOLO esa columna en Sheets — funciona sin importar si el reporte ya está
+// Autorizado o Rechazado, porque es independiente del flujo de revisión.
+// Sin sesión de supervisor se muestra únicamente como badge de lectura.
+function fallaRowHtml(r, key) {
+  if (!S.supIn) return dR('Estatus de la falla', fBadge(r.estatusFalla));
+  var keyEsc = String(key).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  var cur = r.estatusFalla || 'Sin falla';
+  var opts = ['Sin falla', 'Pendiente', 'Resuelto'].map(function (opt) {
+    var lbl = opt === 'Sin falla' ? '➖ Sin falla' : (opt === 'Pendiente' ? '⏳ Pendiente' : '✅ Resuelto');
+    return '<option value="' + opt + '"' + (cur === opt ? ' selected' : '') + '>' + lbl + '</option>';
+  }).join('');
+  return '<div class="det-row">' +
+    '<div class="det-lbl">Estatus de la falla</div>' +
+    '<div class="det-val" style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">' +
+      '<select id="det-falla-select" class="fsel" style="padding:.35rem .5rem">' + opts + '</select>' +
+      '<button class="btn btn-pri btn-sm" onclick="guardarEstatusFalla(\'' + keyEsc + '\')">💾 Guardar</button>' +
+    '</div>' +
+  '</div>';
+}
+
+// Actualiza el Estatus de la falla de un reporte YA enviado (sin importar
+// si está Pendiente, Autorizado o Rechazado) sin tocar ninguna otra
+// columna ni crear un seguimiento nuevo.
+function guardarEstatusFalla(key) {
+  var r = findReportByKey(key);
+  if (!r) return;
+  var sel = document.getElementById('det-falla-select');
+  var nuevo = sel ? sel.value : 'Sin falla';
+  var rowNumber = r._rowNumber || null;
+  var folio = r.folio;
+
+  toast('⏳ Actualizando estatus de la falla...', 'acc');
+  var sheetUrl = S.cfg.sheetsUrl || SHEETS_URL;
+  fetch(sheetUrl, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'updateFalla', rowNumber: rowNumber, folio: folio, estatusFalla: nuevo })
+  })
+    .then(function (res) { return res.json(); })
+    .then(function (result) {
+      if (result && result.ok) {
+        r.estatusFalla = nuevo;
+        var reps = loadLocal();
+        var idx = reps.findIndex(function (x) { return reportKey(x) === key; });
+        if (idx > -1) { reps[idx].estatusFalla = nuevo; localStorage.setItem('empaques_reps', JSON.stringify(reps)); }
+        toast('✅ Estatus de la falla actualizado', 'ok');
+        renderDash(); renderPend(); renderTodos();
+      } else {
+        toast('⚠️ No se pudo actualizar: ' + ((result && result.error) || 'error desconocido'), 'err');
+      }
+    })
+    .catch(function (err) {
+      toast('⚠️ Sin conexión al servidor', 'err');
+      console.warn('Error de red al actualizar estatus de falla:', err);
+    });
+}
 
 function openDec(key, action) {
   var r = findReportByKey(key);
@@ -1108,7 +1340,7 @@ function confirmDec() {
 }
 
 /* ---------------------------------------------------------------------
-   INFORME PDF
+   INFORME PDF (general, por rango de fechas)
 --------------------------------------------------------------------- */
 function clearReportRange() {
   document.getElementById('report-from').value = '';
@@ -1179,6 +1411,7 @@ function buildInformeHtml(reportes, desde, hasta) {
       '<td>' + esc(r.equipo || '-') + '</td>' +
       '<td>' + esc(r.titulo || '-') + '</td>' +
       '<td><span class="status ' + esc(r.status || 'pendiente') + '">' + esc(statusText(r.status)) + '</span></td>' +
+      '<td>' + esc(r.estatusFalla || 'Sin falla') + '</td>' +
       '<td>' + esc(r.supervisorNombre || 'Pendiente') + '</td>' +
     '</tr>';
   }).join('');
@@ -1200,10 +1433,86 @@ function buildInformeHtml(reportes, desde, hasta) {
     '<div class="head"><div><div class="brand">Empaques Modernos de Guadalajara</div><div class="sub">Sistema de reportes operativos</div></div><div class="meta">Generado: ' + esc(now.toLocaleString('es-MX')) + '<br>Usuario: ' + esc(S.supName || 'Supervisor') + '</div></div>' +
     '<h1 class="title">Informe de Reportes</h1><div class="period">' + esc(periodoLabel) + '</div>' +
     '<div class="summary"><div class="card"><b>' + total + '</b><span>Total reportes</span></div><div class="card pend"><b>' + pendientes + '</b><span>Pendientes</span></div><div class="card ok"><b>' + autorizados + '</b><span>Autorizados</span></div><div class="card err"><b>' + rechazados + '</b><span>Rechazados</span></div></div>' +
-    '<div class="grid"><div class="box"><h2>Reportes por area</h2><table><thead><tr><th>Area</th><th>Total</th></tr></thead><tbody>' + areaRows + '</tbody></table></div><div class="box"><h2>Resumen</h2><p>Este documento concentra los reportes capturados en el periodo seleccionado, incluyendo estado de revision, tecnico, area, equipo atendido y supervisor responsable.</p></div></div>' +
-    '<div class="box"><h2>Detalle de reportes</h2><table><thead><tr><th>Folio</th><th>Fecha</th><th>Tecnico</th><th>Area</th><th>Equipo</th><th>Titulo</th><th>Estado</th><th>Supervisor</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="grid"><div class="box"><h2>Reportes por area</h2><table><thead><tr><th>Area</th><th>Total</th></tr></thead><tbody>' + areaRows + '</tbody></table></div><div class="box"><h2>Resumen</h2><p>Este documento concentra los reportes capturados en el periodo seleccionado, incluyendo estado de revision, tecnico, area, equipo atendido, estatus de la falla y supervisor responsable.</p></div></div>' +
+    '<div class="box"><h2>Detalle de reportes</h2><table><thead><tr><th>Folio</th><th>Fecha</th><th>Tecnico</th><th>Area</th><th>Equipo</th><th>Titulo</th><th>Estado</th><th>Falla</th><th>Supervisor</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
     '<div class="foot"><span>Empaques Modernos de Guadalajara</span><span>Informe ' + esc(periodoLabel) + '</span></div>' +
     '</body></html>';
+}
+
+/* ---------------------------------------------------------------------
+   HISTORIAL DE FOLIO — PDF individual
+   Sigue la guía de historial de folios: agrupa todas las capturas de un
+   mismo caso (folio normalizado), ordenadas por fecha, con su estatus
+   de falla, responsable y observaciones.
+--------------------------------------------------------------------- */
+function buildHistorialHtml(entries, norm) {
+  var last = entries[entries.length - 1] || {};
+  var first = entries[0] || {};
+  var folioDisplay = last.folio || first.folio || norm;
+  var equipo = last.equipo || first.equipo || '-';
+  var now = new Date();
+  var estatusFinal = last.estatusFalla || 'Sin falla';
+
+  var rows = entries.map(function (e, i) {
+    var desc = [
+      e.cumplidas ? ('Cumplidas: ' + e.cumplidas) : '',
+      e.noCumplidas ? ('No cumplidas: ' + e.noCumplidas) : '',
+      e.motivoNoCumplida ? ('Motivo: ' + e.motivoNoCumplida) : '',
+      e.anomaliasEquipo ? ('Anomalías: ' + e.anomaliasEquipo) : '',
+      e.observaciones ? ('Obs.: ' + e.observaciones) : ''
+    ].filter(Boolean).join(' | ') || '-';
+    return '<tr>' +
+      '<td>' + (i + 1) + '</td>' +
+      '<td>' + esc(formatReportDate(e.fecha || e.fechaEnvio || e.createdAt)) + '</td>' +
+      '<td><span class="status ' + (e.estatusFalla === 'Resuelto' ? 'autorizado' : (e.estatusFalla === 'Pendiente' ? 'pendiente' : 'neutral')) + '">' + esc(e.estatusFalla || 'Sin falla') + '</span></td>' +
+      '<td><span class="status ' + esc(e.status || 'pendiente') + '">' + esc(statusText(e.status)) + '</span></td>' +
+      '<td>' + esc(e.autorNombre || '-') + '</td>' +
+      '<td>' + esc(desc) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Historial de Folio ' + esc(folioDisplay) + '</title>' +
+    '<style>' +
+    '@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;color:#1E293B;margin:0;background:#fff;font-size:11px}' +
+    '.head{border-bottom:3px solid #0D2557;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;gap:18px;align-items:flex-start}' +
+    '.brand{font-size:18px;font-weight:800;color:#0D2557;letter-spacing:.02em}.sub{font-size:10px;color:#475569;margin-top:3px;text-transform:uppercase;font-weight:700}' +
+    '.meta{text-align:right;color:#475569;line-height:1.55}.title{font-size:22px;font-weight:800;color:#0D2557;margin:0 0 4px}.period{font-size:12px;color:#00AEEF;font-weight:800;text-transform:uppercase}' +
+    '.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 16px}.card{border:1px solid #E2E8F0;border-left:4px solid #0D2557;padding:9px 10px;border-radius:6px;background:#F8FAFC}.card b{font-size:15px;color:#0D2557;display:block}.card span{font-size:9px;color:#475569;text-transform:uppercase;font-weight:800}' +
+    'h2{font-size:12px;color:#0D2557;margin:0 0 7px;text-transform:uppercase;letter-spacing:.04em}.box{border:1px solid #E2E8F0;border-radius:6px;padding:10px;background:#fff;margin-bottom:16px}' +
+    'table{width:100%;border-collapse:collapse}th{background:#0D2557;color:#fff;text-align:left;font-size:9px;text-transform:uppercase;padding:7px 6px}td{border-bottom:1px solid #E2E8F0;padding:7px 6px;vertical-align:top}tr:nth-child(even) td{background:#F8FAFC}' +
+    '.status{display:inline-block;border-radius:999px;padding:2px 7px;font-size:9px;font-weight:800;text-transform:uppercase}.status.pendiente{background:#EFF6FF;color:#1D4ED8}.status.autorizado{background:#F0FDF4;color:#15803D}.status.rechazado{background:#FEF2F2;color:#B91C1C}.status.neutral{background:#F1F5F9;color:#475569}' +
+    '.foot{margin-top:16px;border-top:1px solid #E2E8F0;padding-top:8px;color:#64748B;font-size:9px;display:flex;justify-content:space-between}' +
+    '@media print{button{display:none}.box,.card{break-inside:avoid}tr{break-inside:avoid}}' +
+    '</style></head><body>' +
+    '<div class="head"><div><div class="brand">Empaques Modernos de Guadalajara</div><div class="sub">Historial de seguimiento por folio</div></div><div class="meta">Generado: ' + esc(now.toLocaleString('es-MX')) + '<br>Usuario: ' + esc(S.supName || S.tecNombre || '—') + '</div></div>' +
+    '<h1 class="title">Historial — Folio ' + esc(folioDisplay) + '</h1><div class="period">Cliente: Empaques Modernos de Guadalajara</div>' +
+    '<div class="summary">' +
+      '<div class="card"><b>' + esc(folioDisplay) + '</b><span>Folio</span></div>' +
+      '<div class="card"><b>' + esc(equipo) + '</b><span>Equipo / Máquina</span></div>' +
+      '<div class="card"><b>' + entries.length + '</b><span>Seguimientos registrados</span></div>' +
+      '<div class="card"><b>' + esc(estatusFinal) + '</b><span>Estatus actual de la falla</span></div>' +
+    '</div>' +
+    '<div class="box"><h2>Seguimiento cronológico</h2><table><thead><tr><th>#</th><th>Fecha</th><th>Estatus falla</th><th>Estado</th><th>Responsable</th><th>Descripción / Observaciones</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="foot"><span>Empaques Modernos de Guadalajara</span><span>Historial de folio ' + esc(folioDisplay) + '</span></div>' +
+    '</body></html>';
+}
+
+function exportHistorialPdf(norm) {
+  var entries = sortEntriesByDate(getFolioEntries(norm));
+  if (!entries.length) { toast('No hay historial para este folio', 'err'); return; }
+  var win = window.open('', '_blank');
+  if (!win) {
+    toast('Permite ventanas emergentes para generar el PDF', 'err');
+    return;
+  }
+  win.document.open();
+  win.document.write(buildHistorialHtml(entries, norm));
+  win.document.close();
+  toast('Preparando historial PDF...', 'acc');
+  setTimeout(function () {
+    win.focus();
+    win.print();
+  }, 450);
 }
 
 function statusText(status) {
@@ -1227,7 +1536,7 @@ function exportExcel(periodo) {
   from.setHours(0, 0, 0, 0);
   from.setDate(from.getDate() - days[selected] + 1);
 
-  var h = ['Folio', 'Fecha Envío', 'Técnico', 'Área', 'Turno', 'Fecha Reporte', 'Prioridad', 'Título', 'Equipo', 'Tarea Cumplida', 'Actividades Cumplidas', 'Actividades No Cumplidas', 'Observaciones', 'Comentarios', 'Estado', 'Supervisor', 'Comentario Supervisor'];
+  var h = ['Folio', 'Fecha Envío', 'Técnico', 'Área', 'Turno', 'Fecha Reporte', 'Prioridad', 'Título', 'Equipo', 'Tarea Cumplida', 'Actividades Cumplidas', 'Actividades No Cumplidas', 'Observaciones', 'Comentarios', 'Estado', 'Estatus Falla', 'Supervisor', 'Comentario Supervisor'];
   var reportes = S.reports.filter(function (r) {
     var d = parseReportDate(r.fecha || r.fechaEnvio || r.createdAt);
     return d && d >= from;
@@ -1237,7 +1546,7 @@ function exportExcel(periodo) {
       r.folio, r.fechaEnvio || r.createdAt || '', r.autorNombre, r.area, r.turno, r.fecha,
       r.prioridad, r.titulo, r.equipo || '', r.tareaCumplida || '', r.cumplidas || '', r.noCumplidas || '',
       r.observaciones || '', r.comentarios || '',
-      r.status, r.supervisorNombre || '', r.supervisorComentario || ''
+      r.status, r.estatusFalla || 'Sin falla', r.supervisorNombre || '', r.supervisorComentario || ''
     ];
   });
   var csv = [h].concat(rows).map(function (r) { return r.map(function (c) { return '"' + String(c || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
@@ -1342,19 +1651,29 @@ function pBadge(p) { var m = { Alta: 'b-alta', Crítica: 'b-crit', Normal: 'b-no
 function limpiarForm() {
   ['nr-folio', 'nr-titulo', 'nr-equipo', 'nr-cumplidas', 'nr-nocumplidas', 'nr-motivo-nocumplida', 'nr-anomalias', 'nr-obs', 'nr-comentarios'].forEach(function (id) { document.getElementById(id).value = ''; });
   document.getElementById('nr-turno').value = ''; document.getElementById('nr-prioridad').value = 'Normal'; document.getElementById('nr-tarea-cumplida').value = '';
+  document.getElementById('nr-estatus-falla').value = 'Sin falla';
   document.getElementById('nr-fecha').value = today(); S.imgs = []; renderPrev();
   toggleTareaCumplidaCampos();
+  checkFolioHistorial();
 }
 
 // Muestra solo la sección relevante según lo que el técnico seleccionó en
 // "¿Se cumplió la tarea del equipo?" — así no tiene que llenar todas las
-// secciones (No Cumplidas / Anomalías) sin importar cuál eligió.
+// secciones (No Cumplidas / Anomalías) sin importar cuál eligió. También
+// sugiere automáticamente el Estatus de la falla: si la tarea se realizó
+// con normalidad se asume "Sin falla"; si no se realizó o hay anomalías,
+// se sugiere "Pendiente" (el técnico puede cambiarlo si lo desea).
 function toggleTareaCumplidaCampos() {
   var val = v('nr-tarea-cumplida');
   var secNo = document.getElementById('sec-nocumplidas');
   var secAnom = document.getElementById('sec-anomalias');
   secNo.style.display = (val === 'No realizada') ? '' : 'none';
   secAnom.style.display = (val === 'Anomalias') ? '' : 'none';
+  var estSel = document.getElementById('nr-estatus-falla');
+  if (estSel) {
+    if (val === 'Realizada') estSel.value = 'Sin falla';
+    else if (val === 'No realizada' || val === 'Anomalias') estSel.value = 'Pendiente';
+  }
 }
 var tT;
 function toast(msg, type) {
