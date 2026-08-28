@@ -1178,6 +1178,20 @@ function driveImageUrl(u) {
   if (m) return 'https://drive.google.com/thumbnail?id=' + m[0] + '&sz=w1000';
   return u;
 }
+
+// Devuelve las URLs de las fotos de un reporte/seguimiento, ya sea que
+// vengan como base64 de esta sesión (imagenes) o como links de Drive
+// guardados en Sheets (fotoLinks). Se usa para incluir la evidencia
+// fotográfica de cada seguimiento en el PDF de historial de folio.
+function entryPhotoUrls(e) {
+  if (e.imagenes && e.imagenes.length) {
+    return e.imagenes.map(function (img) { return (img && img.dataUrl) ? img.dataUrl : (typeof img === 'string' ? img : ''); }).filter(Boolean);
+  }
+  if (e.fotoLinks && e.fotoLinks.length) {
+    return e.fotoLinks.map(driveImageUrl).filter(Boolean);
+  }
+  return [];
+}
 function openLboxByIndex(i) {
   var u = lastImgUrls[i];
   if (u) openLbox(u);
@@ -1517,6 +1531,27 @@ function buildHistorialHtml(entries, norm) {
     '</tr>';
   }).join('');
 
+  // Evidencia fotográfica: se agrupa por seguimiento, en el mismo orden
+  // cronológico que la tabla, para que quede claro a qué visita
+  // corresponde cada foto.
+  var entryPhotos = entries.map(function (e) { return entryPhotoUrls(e); });
+  var anyPhotos = entryPhotos.some(function (urls) { return urls.length > 0; });
+  var photosSection = '';
+  if (anyPhotos) {
+    var photoBlocks = entries.map(function (e, i) {
+      var urls = entryPhotos[i];
+      if (!urls.length) return '';
+      var imgs = urls.map(function (u) {
+        return '<img src="' + u + '" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0" />';
+      }).join('');
+      return '<div style="margin-bottom:14px;break-inside:avoid">' +
+        '<div style="font-size:10px;font-weight:800;color:#0D2557;margin-bottom:6px;text-transform:uppercase">Seguimiento ' + (i + 1) + ' — ' + esc(formatReportDate(e.fecha || e.fechaEnvio || e.createdAt)) + '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:8px">' + imgs + '</div>' +
+      '</div>';
+    }).join('');
+    photosSection = '<div class="box"><h2>Evidencia fotográfica</h2>' + photoBlocks + '</div>';
+  }
+
   return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><title>Historial de Folio ' + esc(folioDisplay) + '</title>' +
     '<style>' +
     '@page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Segoe UI,Arial,sans-serif;color:#1E293B;margin:0;background:#fff;font-size:11px}' +
@@ -1539,6 +1574,7 @@ function buildHistorialHtml(entries, norm) {
       '<div class="card"><b>' + esc(estatusFinal) + '</b><span>Estatus actual de la falla</span></div>' +
     '</div>' +
     '<div class="box"><h2>Seguimiento cronológico</h2><table><thead><tr><th>#</th><th>Fecha</th><th>Estatus falla</th><th>Estado</th><th>Responsable</th><th>Descripción / Observaciones</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    photosSection +
     '<div class="foot"><span>Empaques Modernos de Guadalajara</span><span>Historial de folio ' + esc(folioDisplay) + '</span></div>' +
     '</body></html>';
 }
@@ -1554,11 +1590,40 @@ function exportHistorialPdf(norm) {
   win.document.open();
   win.document.write(buildHistorialHtml(entries, norm));
   win.document.close();
-  toast('Preparando historial PDF...', 'acc');
-  setTimeout(function () {
-    win.focus();
-    win.print();
-  }, 450);
+  toast('Preparando historial PDF (cargando fotos)...', 'acc');
+  printWhenImagesReady(win);
+}
+
+// Espera a que todas las fotos de la ventana de impresión terminen de
+// cargar (o fallen) antes de abrir el diálogo de impresión. Sin esto,
+// las fotos que aún no habían descargado (frecuente con fotos de Drive
+// en conexiones lentas) salían en blanco en el PDF/vista previa aunque
+// sí existieran. Tiene un límite de espera de seguridad por si alguna
+// foto nunca termina de cargar (por ejemplo, sin conexión).
+function printWhenImagesReady(win, maxWaitMs) {
+  maxWaitMs = maxWaitMs || 8000;
+  var done = false;
+  function doPrint() {
+    if (done) return;
+    done = true;
+    try { win.focus(); win.print(); } catch (e) {}
+  }
+  var imgs = win.document.images;
+  if (!imgs || !imgs.length) { setTimeout(doPrint, 300); return; }
+  var pending = 0;
+  Array.prototype.forEach.call(imgs, function (img) {
+    if (!img.complete) {
+      pending++;
+      var settle = function () {
+        pending--;
+        if (pending <= 0) doPrint();
+      };
+      img.addEventListener('load', settle);
+      img.addEventListener('error', settle);
+    }
+  });
+  if (pending === 0) { setTimeout(doPrint, 300); return; }
+  setTimeout(doPrint, maxWaitMs);
 }
 
 function statusText(status) {
